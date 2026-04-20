@@ -2,6 +2,32 @@ import glfw
 from OpenGL.GL import *
 import numpy as np
 
+class Carta:
+    def __init__(self, custo, hp, atq, classe, descricao):
+        self.custo = custo
+        self.hp = hp
+        self.atq = atq
+        self.classe = classe
+        self.descricao = descricao
+        self.itens = []
+
+
+class Jogador:
+    def __init__(self, cartasMao):
+        self.hpnexus = 30
+        self.gold = 0
+        self.cartasAtivas = []
+        self.cartasMao = cartasMao
+        pass
+
+class Tabuleiro:
+    def __init__(self):
+        self.tabuleiro = [] #O tabuleiro vai ser basicamente só uma lista de quadrados, os quadrados podem ser organizados da esquerda pra direita de cima pra baixo, sendo quadrado1, quadrado2, etc.
+
+class Quadrado:
+    def __init__(self, ocupado, carta):
+        ocupado = False
+
 
 def framebuffer_size_callback(window, width, height):
     glViewport(0, 0, width, height)
