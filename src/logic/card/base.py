@@ -1,3 +1,6 @@
+from lib.types import CardClass
+
+
 class Card:
     def __init__(
         self,
@@ -5,7 +8,7 @@ class Card:
         name: str,
         description: str,
         gold_cost: int,
-        card_class: str,
+        card_class: CardClass,
         effects: dict[str, any]
     ) -> None:
         self.id = id
@@ -14,3 +17,6 @@ class Card:
         self.card_class = card_class
         self.description = description
         self.effects = effects
+
+    def is_turret(self) -> bool:
+        return self.card_class == CardClass.TURRET
