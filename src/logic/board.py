@@ -4,9 +4,12 @@ from src.logic.card_cell import CardCell
 
 class Board:
     def __init__(self):
-        self.red_side: list[CardCell] = [CardCell() for _ in range(7)]
-        self.blue_side: list[CardCell] = [CardCell() for _ in range(7)]
-        self.turrets: list[CardCell] = [CardCell() for _ in range(4)]
+        self.red_side: tuple[CardCell, CardCell, CardCell, CardCell,
+                             CardCell, CardCell, CardCell] = (CardCell() for _ in range(7))
+        self.blue_side: tuple[CardCell, CardCell, CardCell, CardCell,
+                              CardCell, CardCell, CardCell] = (CardCell() for _ in range(7))
+        self.turrets: tuple[CardCell, CardCell, CardCell,
+                            CardCell] = (CardCell() for _ in range(4))
 
     def place_card_on_blue_side(self, card: Card, position: int) -> None:
         if position < 0 or position >= len(self.blue_side):
@@ -30,13 +33,3 @@ class Board:
         if self.turrets[position].occupied:
             raise ValueError("Position already occupied")
         self.turrets[position].set_card(card)
-
-    def display(self):
-        for cell in self.red_side:
-            print(' '.join(str(cell.card) if cell.occupied else '0'), end=' ')
-        print()
-        for cell in self.blue_side:
-            print(' '.join(str(cell.card) if cell.occupied else '0'), end=' ')
-        print()
-        for cell in self.turrets:
-            print(' '.join(str(cell.card) if cell.occupied else '0'), end=' ')

@@ -1,5 +1,6 @@
 from lib.types import CardClass
 from src.logic.card.base import Card
+from src.logic.card.entity_attributes import EntityAttributes
 
 
 class MinionCard(Card):
@@ -10,7 +11,7 @@ class MinionCard(Card):
         description: str,
         gold_cost: int,
         effects: dict[str, any],
-        attributes: dict[str, any],
+        attributes: EntityAttributes,
     ) -> None:
         super().__init__(id, name, description, gold_cost, CardClass.MINION, effects)
         self.attributes = attributes
