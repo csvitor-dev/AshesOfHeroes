@@ -1,11 +1,22 @@
+from lib.types import GameSide
 from src.logic.card.base import Card
 from src.logic.card_cell import CardCell
+from src.logic.card.card_deck import CardDeck
+from src.logic.heroes_aegis import HeroesAegis
+from src.logic.stage import Stage
 
 
 class Board:
-    def __init__(self):
+    def __init__(self, red_deck: CardDeck, blue_deck: CardDeck):
+        self.stagging = Stage()
+        self.red_aegis = HeroesAegis(1000, 100, GameSide.RED)
+        self.red_deck = red_deck
+        self.red_cemitery = CardDeck()
         self.red_side: tuple[CardCell, CardCell, CardCell, CardCell,
                              CardCell, CardCell, CardCell] = (CardCell() for _ in range(7))
+        self.blue_aegis = HeroesAegis(1000, 100, GameSide.BLUE)
+        self.blue_deck = blue_deck
+        self.blue_cemitery = CardDeck()
         self.blue_side: tuple[CardCell, CardCell, CardCell, CardCell,
                               CardCell, CardCell, CardCell] = (CardCell() for _ in range(7))
         self.turrets: tuple[CardCell, CardCell, CardCell,
