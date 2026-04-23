@@ -14,3 +14,8 @@ class CardClass(Enum):
 class SpellType(Enum):
     OFFENSIVE = 1
     DEFENSIVE = 2
+
+
+class GameSide(Enum):
+    RED = 1
+    BLUE = 2

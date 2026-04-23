@@ -8,6 +8,9 @@ class CardCell:
     def set_card(self, card: Card) -> None:
         self.__card = card
 
+    def reset_card(self) -> None:
+        self.__card = None
+
     @property
     def occupied(self) -> bool:
         return self.__card is not None
