@@ -26,11 +26,20 @@ class HeroCard(Card):
         name: str,
         description: str,
         gold_cost: int,
+        gold_profit: int,
         effects: dict[str, any],
         attributes: EntityAttributes,
         skills: tuple[Skill, Skill]
     ) -> None:
-        super().__init__(id, name, description, gold_cost, CardClass.HERO, effects)
+        super().__init__(
+            id,
+            name,
+            description,
+            gold_cost,
+            gold_profit,
+            CardClass.HERO,
+            effects
+        )
         self.level = 1
         self.attributes = attributes
         self.skills = skills

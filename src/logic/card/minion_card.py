@@ -10,8 +10,17 @@ class MinionCard(Card):
         name: str,
         description: str,
         gold_cost: int,
+        gold_profit: int,
         effects: dict[str, any],
         attributes: EntityAttributes,
     ) -> None:
-        super().__init__(id, name, description, gold_cost, CardClass.MINION, effects)
+        super().__init__(
+            id,
+            name,
+            description,
+            gold_cost,
+            gold_profit,
+            CardClass.MINION,
+            effects
+        )
         self.attributes = attributes

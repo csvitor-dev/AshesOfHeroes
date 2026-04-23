@@ -12,5 +12,13 @@ class EnchantmentCard(Card):
         effects: dict[str, any],
         applies_on: list[CardClass],
     ) -> None:
-        super().__init__(id, name, description, gold_cost, CardClass.ENCHANTMENT, effects)
+        super().__init__(
+            id,
+            name,
+            description,
+            gold_cost,
+            CardClass.ENCHANTMENT,
+            effects,
+            gold_profit=0
+        )
         self.applies_on = applies_on

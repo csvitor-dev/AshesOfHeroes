@@ -13,6 +13,14 @@ class SpellCard(Card):
         applies_on: list[CardClass],
         spell_type: SpellType,
     ) -> None:
-        super().__init__(id, name, description, gold_cost, CardClass.SPELL, effects)
+        super().__init__(
+            id,
+            name,
+            description,
+            gold_cost,
+            CardClass.SPELL,
+            effects,
+            gold_profit=0
+        )
         self.applies_on = applies_on
         self.type = spell_type

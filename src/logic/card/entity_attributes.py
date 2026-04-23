@@ -7,6 +7,7 @@ class EntityAttributes:
         magic_damage: int,
         armor: int,
         magic_resistence: int,
+        turn_cooldown: int,
     ) -> None:
         self.health = health
         self.mana = mana
@@ -14,3 +15,4 @@ class EntityAttributes:
         self.magic_damage = magic_damage
         self.armor = armor
         self.magic_resistence = magic_resistence
+        self.turn_cooldown = turn_cooldown

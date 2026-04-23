@@ -16,8 +16,17 @@ class ItemCard(Card):
         name: str,
         description: str,
         gold_cost: int,
+        gold_profit: int,
         effects: dict[str, any],
         attributes: ItemAttributes,
     ) -> None:
-        super().__init__(id, name, description, gold_cost, CardClass.ITEM, effects)
+        super().__init__(
+            id,
+            name,
+            description,
+            gold_cost,
+            gold_profit,
+            CardClass.ITEM,
+            effects
+        )
         self.attributes = attributes
