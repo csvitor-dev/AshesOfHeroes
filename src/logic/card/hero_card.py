@@ -3,6 +3,18 @@ from src.logic.card.base import Card
 from src.logic.card.entity_attributes import EntityAttributes
 
 
+class Passive:
+    def __init__(
+        self,
+        name: str,
+        description: str,
+        effects: dict[str, any],
+    ) -> None:
+        self.name = name
+        self.description = description
+        self.effects = effects
+
+
 class Skill:
     def __init__(
         self,
@@ -11,13 +23,14 @@ class Skill:
         effects: dict[str, any],
         mana_cost: int,
         turn_cooldown: int,
+        passive: Passive | None = None
     ) -> None:
         self.name = name
         self.description = description
         self.effects = effects
         self.mana_cost = mana_cost
         self.turn_cooldown = turn_cooldown
-
+        self.passive = passive
 
 class HeroCard(Card):
     def __init__(
@@ -29,7 +42,8 @@ class HeroCard(Card):
         gold_profit: int,
         effects: dict[str, any],
         attributes: EntityAttributes,
-        skills: tuple[Skill, Skill]
+        skills: tuple[Skill, Skill],
+        passive: Passive
     ) -> None:
         super().__init__(
             id,
@@ -43,6 +57,7 @@ class HeroCard(Card):
         self.level = 1
         self.attributes = attributes
         self.skills = skills
+        self.passive = passive
         self.items = []
 
     def level_up(self):
