@@ -13,13 +13,13 @@ class Card:
         card_class: CardClass,
         effects: deque[Effect]
     ) -> None:
-        self.id = id
-        self.name = name
-        self.gold_cost = gold_cost
-        self.gold_profit = gold_profit
-        self.card_class = card_class
-        self.description = description
-        self.effects = effects
+        self._id = id
+        self._name = name
+        self._gold_cost = gold_cost
+        self._gold_profit = gold_profit
+        self._card_class = card_class
+        self._description = description
+        self._effects = effects
 
     def is_turret(self) -> bool:
-        return self.card_class == CardClass.TURRET
+        return self._card_class == CardClass.TURRET
