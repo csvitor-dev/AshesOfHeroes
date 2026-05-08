@@ -1,7 +1,9 @@
 from collections import deque
 from lib.types import CardClass
-from src.logic.card.base import Card
-from src.logic.card.entity_attributes import EntityAttributes
+from src.logic.card_cell import CardCell
+from src.logic.contracts.card import Card
+from src.logic.card.item_card import ItemCard
+from src.logic.contracts.entity_attributes import EntityAttributes
 from src.logic.contracts.effect import Effect
 
 
@@ -57,16 +59,16 @@ class HeroCard(Card):
             CardClass.HERO,
             effects
         )
-        self.level = 1
-        self.attributes = attributes
-        self.skills = skills
-        self.passive = passive
-        self.items = []
+        self.__level = 1
+        self.__attributes = attributes
+        self.__skills = skills
+        self.__passive = passive
+        self.__items = (CardCell(), CardCell(), CardCell())
 
     def level_up(self):
-        if self.level == 5:
+        if self.__level == 5:
             return
-        self.level += 1
+        self.__level += 1
         self.__increase_attributes()
         self.__increase_skills()
 
@@ -75,3 +77,10 @@ class HeroCard(Card):
 
     def __increase_skills(self):
         ...
+
+    def add_item(self, item_card: ItemCard) -> bool:
+        for cell in self.items:
+            if cell.occupied is False:
+                cell.set_card(item_card)
+                return True
+        return False

@@ -1,4 +1,4 @@
-from src.logic.card.base import Card
+from src.logic.contracts.card import Card
 
 
 class CardCell:

@@ -1,7 +1,7 @@
 from collections import deque
 from lib.types import CardClass
-from src.logic.card.base import Card
-from src.logic.card.entity_attributes import EntityAttributes
+from src.logic.contracts.card import Card
+from src.logic.contracts.entity_attributes import EntityAttributes
 from src.logic.contracts.effect import Effect
 
 
@@ -25,4 +25,4 @@ class MinionCard(Card):
             CardClass.MINION,
             effects
         )
-        self.attributes = attributes
+        self.__attributes = attributes

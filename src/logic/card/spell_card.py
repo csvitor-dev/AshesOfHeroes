@@ -1,6 +1,6 @@
 from collections import deque
 from lib.types import CardClass, SpellType
-from src.logic.card.base import Card
+from src.logic.contracts.card import Card
 from src.logic.contracts.effect import Effect
 
 
@@ -24,5 +24,5 @@ class SpellCard(Card):
             effects,
             gold_profit=0
         )
-        self.applies_on = applies_on
-        self.type = spell_type
+        self.__applies_on = applies_on
+        self.__type = spell_type

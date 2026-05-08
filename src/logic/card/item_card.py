@@ -1,14 +1,8 @@
 from collections import deque
 from lib.types import CardClass
-from src.logic.card.base import Card
+from src.logic.contracts.card import Card
 from src.logic.contracts.effect import Effect
-
-
-class ItemAttributes:
-    def __init__(self, resources: deque[Effect], activateable: str, turn_cooldown: int) -> None:
-        self.resources = resources
-        self.activateable = activateable
-        self.turn_cooldown = turn_cooldown
+from src.logic.contracts.item_attributes import ItemAttributes
 
 
 class ItemCard(Card):
@@ -31,4 +25,4 @@ class ItemCard(Card):
             CardClass.ITEM,
             effects
         )
-        self.attributes = attributes
+        self.__attributes = attributes
