@@ -1,5 +1,6 @@
+from collections import deque
 from lib.types import CardClass
-
+from src.logic.contracts.effect import Effect
 
 class Card:
     def __init__(
@@ -10,7 +11,7 @@ class Card:
         gold_cost: int,
         gold_profit: int,
         card_class: CardClass,
-        effects: dict[str, any]
+        effects: deque[Effect]
     ) -> None:
         self.id = id
         self.name = name

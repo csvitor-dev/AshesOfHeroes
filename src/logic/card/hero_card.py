@@ -1,6 +1,8 @@
+from collections import deque
 from lib.types import CardClass
 from src.logic.card.base import Card
 from src.logic.card.entity_attributes import EntityAttributes
+from src.logic.contracts.effect import Effect
 
 
 class Passive:
@@ -8,7 +10,7 @@ class Passive:
         self,
         name: str,
         description: str,
-        effects: dict[str, any],
+        effects: deque[Effect],
     ) -> None:
         self.name = name
         self.description = description
@@ -20,7 +22,7 @@ class Skill:
         self,
         name: str,
         description: str,
-        effects: dict[str, any],
+        effects: deque[Effect],
         mana_cost: int,
         turn_cooldown: int,
         passive: Passive | None = None
@@ -32,6 +34,7 @@ class Skill:
         self.turn_cooldown = turn_cooldown
         self.passive = passive
 
+
 class HeroCard(Card):
     def __init__(
         self,
@@ -40,7 +43,7 @@ class HeroCard(Card):
         description: str,
         gold_cost: int,
         gold_profit: int,
-        effects: dict[str, any],
+        effects: deque[Effect],
         attributes: EntityAttributes,
         skills: tuple[Skill, Skill],
         passive: Passive

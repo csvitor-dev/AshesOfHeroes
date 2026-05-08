@@ -1,6 +1,8 @@
+from collections import deque
 from lib.types import CardClass
 from src.logic.card.base import Card
 from src.logic.card.entity_attributes import EntityAttributes
+from src.logic.contracts.effect import Effect
 
 
 class TurretCard(Card):
@@ -11,7 +13,7 @@ class TurretCard(Card):
         description: str,
         gold_cost: int,
         gold_profit: int,
-        effects: dict[str, any],
+        effects: deque[Effect],
         attributes: EntityAttributes,
         turn_cooldown: int,
     ) -> None:

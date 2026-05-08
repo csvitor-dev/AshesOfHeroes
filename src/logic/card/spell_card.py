@@ -1,5 +1,7 @@
+from collections import deque
 from lib.types import CardClass, SpellType
 from src.logic.card.base import Card
+from src.logic.contracts.effect import Effect
 
 
 class SpellCard(Card):
@@ -9,8 +11,8 @@ class SpellCard(Card):
         name: str,
         description: str,
         gold_cost: int,
-        effects: dict[str, any],
-        applies_on: list[CardClass],
+        effects: deque[Effect],
+        applies_on: deque[CardClass],
         spell_type: SpellType,
     ) -> None:
         super().__init__(
