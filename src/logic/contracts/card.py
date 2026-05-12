@@ -2,6 +2,7 @@ from collections import deque
 from lib.types import CardClass
 from src.logic.contracts.effect import Effect
 
+
 class Card:
     def __init__(
         self,
@@ -23,3 +24,7 @@ class Card:
 
     def is_turret(self) -> bool:
         return self._card_class == CardClass.TURRET
+
+    @property
+    def id(self) -> int:
+        return self._id
