@@ -2,7 +2,7 @@ import glfw
 from OpenGL.GL import *
 import sys
 from lib.events import EventType
-from src.core.event_manager import EventManager
+from core.event import EventManager
 
 
 def framebuffer_size_callback(window, width, height):
