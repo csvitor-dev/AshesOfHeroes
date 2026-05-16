@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from collections import deque
 from typing import Any
-from core.event import EventManager
+from src.core.event import EventManager
 
 
 class Scene(ABC):

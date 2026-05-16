@@ -1,8 +1,7 @@
 import glfw
 from OpenGL.GL import *
-import sys
 from lib.events import EventType
-from core.event import EventManager
+from src.core.event import EventManager
 
 
 def framebuffer_size_callback(window, width, height):
@@ -51,12 +50,14 @@ class Window:
 
     def _key_callback(self, window, key, scancode, action, mods):
         if action == glfw.PRESS:
-            self.__events.emit(EventType.RAW_INPUT_KEY, key=key, action="PRESS")
+            self.__events.emit(EventType.RAW_INPUT_KEY,
+                               key=key, action="PRESS")
 
     def _mouse_button_callback(self, window, button, action, mods):
         if action == glfw.PRESS:
             x, y = glfw.get_cursor_pos(window)
-            self.__events.emit(EventType.RAW_INPUT_MOUSE, button=button, x=x, y=y)
+            self.__events.emit(EventType.RAW_INPUT_MOUSE,
+                               button=button, x=x, y=y)
 
     def poll_events(self):
         glfw.poll_events()

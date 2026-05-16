@@ -1,8 +1,8 @@
-from typing import Any
+from typing import Any, Optional
 from lib.events import EventType
 from src.core.event import EventManager
 from src.core.scene import SceneManager
-from src.logic.contracts.card import Card
+from src.logic.contracts import Card
 
 
 class Input:
@@ -11,7 +11,7 @@ class Input:
         self.__scenes = scene_manager
 
         self.__is_dragging = False
-        self.__dragged_object: Card | None = None
+        self.__dragged_object: Optional[Card] = None
 
         self.__events.subscribe(
             EventType.RAW_INPUT_MOUSE, self.__handle_mouse_click)
@@ -27,7 +27,7 @@ class Input:
             self.__is_dragging = True
             self.__dragged_object = clicked_entity
 
-    def __pick_entity(self, x: float, y: float) -> Card | None:
+    def __pick_entity(self, x: float, y: float) -> Optional[Card]:
         for card in self.__scenes.get_renderable_cards():
             if card.is_point_inside(x, y):
                 return card

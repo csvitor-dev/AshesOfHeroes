@@ -1,5 +1,5 @@
 from lib.types import GameSide
-from src.logic.card_cell import CardCell
+from src.logic import CardCell
 
 
 class HeroesAegis:

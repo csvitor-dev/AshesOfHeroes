@@ -1,8 +1,9 @@
-from src.logic.contracts.card import Card
+from typing import Optional
+from src.logic.contracts import Card
 
 
 class CardCell:
-    def __init__(self, card: Card | None = None):
+    def __init__(self, card: Optional[Card] = None):
         self.__card = card
 
     def set_card(self, card: Card) -> None:

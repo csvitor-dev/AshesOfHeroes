@@ -1,5 +1,5 @@
 from collections import deque
-from typing import Protocol
+from typing import Optional, Protocol
 
 
 class AnimationCommand(Protocol):
@@ -13,7 +13,7 @@ class AnimationCommand(Protocol):
 class AnimationQueue:
     def __init__(self):
         self.__queue: deque[AnimationCommand] = deque()
-        self.__current_animation: AnimationCommand | None = None
+        self.__current_animation: Optional[AnimationCommand] = None
 
     def enqueue(self, animation_command: AnimationCommand) -> None:
         self.__queue.append(animation_command)
