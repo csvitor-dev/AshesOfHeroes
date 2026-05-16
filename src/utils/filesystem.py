@@ -12,8 +12,8 @@ def read_file(filename: str) -> str:
 
 
 def read_vertex_shader(scope: str, filename: str) -> str:
-    return read_file(f"shaders/{scope}/{filename}_vertex.glsl")
+    return read_file(f"shaders/{scope}/{filename}.vertex.glsl")
 
 
 def read_fragment_shader(scope: str, filename: str) -> str:
-    return read_file(f"shaders/{scope}/{filename}_fragment.glsl")
+    return read_file(f"shaders/{scope}/{filename}.fragment.glsl")
