@@ -1,10 +1,9 @@
 from collections import deque
-from lib.types import CardClass, SpellType
-from src.logic.contracts.card import Card
-from src.logic.contracts.effect import Effect
+from lib.types import CardClass
+from src.logic.contracts import Card, EntityAttributes, Effect
 
 
-class EventCard(Card):
+class MinionCard(Card):
     def __init__(
         self,
         id: int,
@@ -13,7 +12,7 @@ class EventCard(Card):
         gold_cost: int,
         gold_profit: int,
         effects: deque[Effect],
-        applies_on: deque[CardClass],
+        attributes: EntityAttributes,
     ) -> None:
         super().__init__(
             id,
@@ -21,7 +20,7 @@ class EventCard(Card):
             description,
             gold_cost,
             gold_profit,
-            CardClass.EVENT,
+            CardClass.MINION,
             effects
         )
-        self.__applies_on = applies_on
+        self.__attributes = attributes

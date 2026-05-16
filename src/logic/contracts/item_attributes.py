@@ -1,5 +1,5 @@
 from collections import deque
-from src.logic.contracts.effect import Effect
+from src.logic.contracts import Effect
 
 
 class ItemAttributes:

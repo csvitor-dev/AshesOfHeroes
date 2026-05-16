@@ -1,5 +1,5 @@
 from typing import Protocol
-from src.logic.contracts.card import Card
+from src.logic.contracts import Card
 
 
 class Effect(Protocol):

@@ -1,7 +1,6 @@
 from collections import deque
 from lib.types import CardClass, SpellType
-from src.logic.contracts.card import Card
-from src.logic.contracts.effect import Effect
+from src.logic.contracts import Card, Effect
 
 
 class SpellCard(Card):

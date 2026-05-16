@@ -1,4 +1,5 @@
 from collections import deque
+from typing import Optional
 from lib.types import CardClass
 from src.logic.card_cell import CardCell
 from src.logic.contracts.card import Card
@@ -27,7 +28,7 @@ class Skill:
         effects: deque[Effect],
         mana_cost: int,
         turn_cooldown: int,
-        passive: Passive | None = None
+        passive: Optional[Passive] = None
     ) -> None:
         self.name = name
         self.description = description
