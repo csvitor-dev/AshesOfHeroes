@@ -7,7 +7,7 @@ from lib.events import EventType
 from typing import Any
 
 
-class VisualBoard:
+class ViewBoard:
     def __init__(self, event_manager: EventManager, animation_queue: AnimationQueue):
         self.events = event_manager
         self.animation_queue = animation_queue
