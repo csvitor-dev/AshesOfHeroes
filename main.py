@@ -1,8 +1,8 @@
-from src.core.engine import Engine
+from src.core import Engine
 
 
 def main():
-    engine = Engine(width=800, height=600)
+    engine = Engine(width=800, height=800)
     engine.run()
 
 

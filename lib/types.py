@@ -1,21 +1,34 @@
-from enum import Enum
+from enum import Enum, auto
 
 
 class CardClass(Enum):
-    MINION = 1
-    TURRET = 2
-    HERO = 3
-    SPELL = 4
-    ENCHANTMENT = 5
-    ITEM = 6
-    EVENT = 7
+    MINION = auto()
+    TURRET = auto()
+    HERO = auto()
+    SPELL = auto()
+    ENCHANTMENT = auto()
+    ITEM = auto()
+    EVENT = auto()
 
 
 class SpellType(Enum):
-    OFFENSIVE = 1
-    DEFENSIVE = 2
+    OFFENSIVE = auto()
+    DEFENSIVE = auto()
 
 
 class GameSide(Enum):
-    RED = 1
-    BLUE = 2
+    RED = auto()
+    BLUE = auto()
+
+
+class SlotOwner(Enum):
+    PLAYER = auto()
+    OPPONENT = auto()
+    NEUTRAL = auto()
+
+
+class SlotState(Enum):
+    EMPTY = auto()
+    OCCUPIED = auto()
+    HOVERED = auto()
+    SELECTED = auto()
