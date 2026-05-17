@@ -1,9 +1,9 @@
 from lib.types import GameSide
 from src.logic.contracts import Card
-from src.logic import CardCell
-from src.logic import CardDeck
-from src.logic import HeroesAegis
-from src.logic import Stage
+from .card_cell import CardCell
+from .card_deck import CardDeck
+from .heroes_aegis import HeroesAegis
+from .stage import Stage
 
 
 class Board:
