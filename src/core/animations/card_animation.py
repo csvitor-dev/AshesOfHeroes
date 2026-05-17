@@ -1,4 +1,3 @@
-import glfw
 from typing import Any
 from src.core.animation import AnimationCommand
 
