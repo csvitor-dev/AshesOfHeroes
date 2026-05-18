@@ -1,7 +1,7 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING
 from lib.types import CardClass
-
+from collections import deque
 if TYPE_CHECKING:
     from .effect import Effect
 class Card:
