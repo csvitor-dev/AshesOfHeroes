@@ -1,5 +1,5 @@
 from typing import Any
-from lib.events import EventType
+from lib.events import Events
 from src.core.scene import Scene, SceneManager
 from src.core.event import EventManager
 from mechanics.match_logic import MatchLogic
@@ -24,7 +24,7 @@ class BattleFieldScene(Scene):
             'player_deck_id'), params.get('enemy_deck_id'))
 
         self._events.subscribe(
-            EventType.ACTION_PAUSE_GAME, self._on_pause_requested)
+            Events.ACTION_PAUSE_GAME, self._on_pause_requested)
 
         self.__match_logic.start_game()
 

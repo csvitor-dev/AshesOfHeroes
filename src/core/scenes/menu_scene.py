@@ -1,5 +1,5 @@
 from typing import Any
-from lib.events import EventType
+from lib.events import Events
 from src.core.event import EventManager
 from src.core.scene import Scene, SceneManager
 
@@ -12,11 +12,11 @@ class MenuScene(Scene):
 
     def on_enter(self, **params: Any) -> None:
         print("Entrando no Menu Principal...")
-        self._events.subscribe(EventType.RAW_INPUT_MOUSE, self._on_mouse_click)
+        self._events.subscribe(Events.RAW_INPUT_MOUSE, self._on_mouse_click)
 
     def on_exit(self) -> None:
         print("Saindo do Menu Principal...")
-        self._events.unsubscribe(EventType.RAW_INPUT_MOUSE, self._on_mouse_click)
+        self._events.unsubscribe(Events.RAW_INPUT_MOUSE, self._on_mouse_click)
 
     def _on_mouse_click(self, data: Any) -> None:
         x, y = data['x'], data['y']
