@@ -32,3 +32,10 @@ class SlotState(Enum):
     OCCUPIED = auto()
     HOVERED = auto()
     SELECTED = auto()
+
+
+class SlotKind(Enum):
+    BATTLE = auto()
+    STAGING = auto()
+    INVENTORY = auto()
+    DECK = auto()
