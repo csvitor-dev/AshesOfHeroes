@@ -1,0 +1,56 @@
+from OpenGL.GL import *
+import glm
+from view_card import *
+
+class PilhaCartas:
+    def __init__(self, posicao=(0, 0, 0), escala=(1, 1, 1), espessura=None):
+        self.cartas = []
+        
+        # Se não passou espessura, usa a mesma da classe Carta
+        if espessura is None:
+            # Cria uma carta temporária para pegar a espessura
+            carta_temp = Carta()
+            self.espessura = carta_temp.espessura
+        else:
+            self.espessura = espessura
+            
+        self.posicao = posicao
+        self.escala = escala
+    
+    def adicionar_carta(self, carta):
+        """Adiciona uma carta específica à pilha"""
+        self.cartas.append(carta)
+    
+    def remover_carta(self):
+        """Remove e retorna a carta do topo"""
+        if self.cartas:
+            return self.cartas.pop()
+        return None
+    
+    def render(self, locations, posicao_base=(0, 0, 0), escala=(1, 1, 1)):
+        x_base, y_base, z_base = posicao_base
+        sx, sy, sz = escala
+        
+        for i, carta in enumerate(self.cartas):
+            modelMatrix = glm.mat4(1.0)
+            # Empilha no eixo Y (vertical)
+            z_offset = i * self.espessura
+            modelMatrix = glm.translate(modelMatrix, glm.vec3(x_base, y_base, z_base + z_offset))
+            modelMatrix = glm.scale(modelMatrix, glm.vec3(sx, sy, sz))
+            
+            glUniformMatrix4fv(locations['modelMatrix'], 1, GL_FALSE, glm.value_ptr(modelMatrix))
+            carta.render()
+
+    
+    def get_topo(self):
+        """Retorna a carta do topo sem remover"""
+        if self.cartas:
+            return self.cartas[-1]
+        return None
+    
+    def esta_vazia(self):
+        return len(self.cartas) == 0
+    
+    def tamanho(self):
+        return len(self.cartas)
+    
