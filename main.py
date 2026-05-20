@@ -1,8 +1,11 @@
-from src.core import Engine
+from src.core import EngineBuilder
 
 
 def main():
-    engine = Engine(width=800, height=800)
+    builder = EngineBuilder()
+
+    engine = builder.add_window(width=800, height=800).build()
+
     engine.run()
 
 
