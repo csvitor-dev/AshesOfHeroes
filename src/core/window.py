@@ -18,6 +18,12 @@ class Window:
 
         self.__initialize_glfw()
 
+    def set_title(self, title: str):
+        self.__title = title
+
+        if self.__handle:
+            glfw.set_window_title(self.__handle, title)
+
     def __initialize_glfw(self):
         if not glfw.init():
             raise Exception("Failed to initialize GLFW")

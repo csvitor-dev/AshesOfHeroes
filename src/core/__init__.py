@@ -1,4 +1,5 @@
 from .animation import AnimationCommand, AnimationQueue
+from .engine_builder import EngineBuilder
 from .engine import Engine
 from .event import EventManager
 from .input import Input
