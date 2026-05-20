@@ -1,6 +1,6 @@
 from collections import deque
 from lib.types import CardClass
-from src.logic.contracts import Effect
+from src.logic.contracts.effect import Effect
 
 
 class Card:

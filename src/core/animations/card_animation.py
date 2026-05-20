@@ -1,6 +1,6 @@
 from typing import Any
-from src.core import AnimationCommand
-from src.graphics.objects import ViewCard
+from src.core.animation import AnimationCommand
+from src.graphics.objects.view_card import ViewCard
 
 
 class CardAnimation(AnimationCommand):

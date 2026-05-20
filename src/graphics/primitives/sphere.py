@@ -1,6 +1,6 @@
 import numpy as np
 import math
-from src.graphics.primitives import Entity3D
+from src.graphics.primitives.entity_3d import Entity3D
 
 
 class Sphere(Entity3D):

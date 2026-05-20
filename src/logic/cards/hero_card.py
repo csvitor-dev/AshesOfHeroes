@@ -3,7 +3,7 @@ from typing import Optional
 from lib.types import CardClass
 from src.logic.card_cell import CardCell
 from src.logic.contracts.card import Card
-from src.logic.card.item_card import ItemCard
+from src.logic.cards.item_card import ItemCard
 from src.logic.contracts.entity_attributes import EntityAttributes
 from src.logic.contracts.effect import Effect
 

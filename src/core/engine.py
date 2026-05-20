@@ -1,10 +1,9 @@
 from OpenGL.GL import *
 import time
 from typing import Any
-from src.core import EngineBuilder, EventManager, SceneManager, Window
-from src.graphics.rendering import Renderer
-from src.core.animation import AnimationQueue
-from src.graphics.objects import ViewBoard
+from src.core.event import EventManager
+from src.core.scene import SceneManager
+from src.core.window import Window
 
 
 class Engine:
@@ -24,43 +23,6 @@ class Engine:
 
         self.__is_running = True
         self.__last_frame_time = time.time()
-
-    @classmethod
-    def from_builder(cls, builder: EngineBuilder) -> Engine:
-        events = EventManager()
-
-        window = Window(
-            builder.window.get("width", 1280),
-            builder.window.get("height", 720),
-            events
-        )
-        services: dict[str, Any] = {"events": events, "window": window}
-
-        for name, factory in builder.factories.items():
-            if factory is None:
-                continue
-            try:
-                services[name] = factory(services)
-            except TypeError:
-                services[name] = factory()
-
-        if "camera" not in services and "camera" in builder.factories:
-            ...
-        scenes = SceneManager(events)
-        services["scenes"] = scenes
-
-        for key, scene_factory in builder.scene_reg.items():
-            scenes.register(key, lambda sf=scene_factory: sf(services))
-
-        if builder.initial_scene:
-            scenes.push_by_key(builder.initial_scene)
-
-        return cls(
-            window=window,
-            events=events,
-            scenes=scenes,
-            services=services,
-        )
 
     def run(self) -> None:
         while self.__is_running and not self.__window.should_close():

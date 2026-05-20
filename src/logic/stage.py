@@ -1,4 +1,4 @@
-from src.logic import CardCell
+from src.logic.card_cell import CardCell
 
 type StageCell = tuple[CardCell, bool]
 """ A stage cell is a tuple of a card cell and a boolean indicating whether the card is revealed or not. """

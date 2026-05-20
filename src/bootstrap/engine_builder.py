@@ -1,5 +1,4 @@
 from typing import Callable, Any
-from src.core import Engine
 
 
 class EngineBuilder:
@@ -10,7 +9,7 @@ class EngineBuilder:
         self.scene_reg: dict[str, Callable[..., Any]] = {}
         self.initial_scene: str | None = None
 
-    def add_window(self, width: int, height: int, title: str = "Ashe of Heroes") -> EngineBuilder:
+    def add_window(self, width: int, height: int, title: str) -> EngineBuilder:
         self.window = {"width": width, "height": height, "title": title}
         return self
 
@@ -41,6 +40,3 @@ class EngineBuilder:
     def set_initial_scene(self, key: str) -> EngineBuilder:
         self.initial_scene = key
         return self
-
-    def build(self) -> Engine:
-        return Engine.from_builder(self)

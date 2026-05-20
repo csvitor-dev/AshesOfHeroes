@@ -4,13 +4,13 @@ from OpenGL.GL import *
 from typing import Any
 from src.core.animation import AnimationQueue
 from src.core.event import EventManager
-from src.core.animations import CardAnimation
+from src.core.animations.card_animation import CardAnimation
 from src.graphics.slots import SlotRect, SlotOwner
-from src.graphics.layouts import BoardLayout
-from src.graphics.rendering import Renderer
+from src.graphics.layouts.board_layout import BoardLayout
+from src.graphics.rendering.renderer import Renderer
 from src.graphics.vertex import VertexLayout, VertexAttribute
 # from src.graphics.texture_manager import TextureManager
-from src.graphics.objects import ViewCard
+from src.graphics.objects.view_card import ViewCard
 # from src.graphics.camera import BoardCamera, _set_mat4
 from lib.events import Events
 

@@ -1,10 +1,10 @@
 from OpenGL.GL import *
 from pyglm import glm
 from typing import Any
-from src.graphics.rendering import Renderer
+from src.graphics.rendering.renderer import Renderer
 from src.graphics.vertex import VertexLayout, VertexAttribute
 # from src.graphics.texture_manager import TextureManager
-#from src.graphics.camera import _set_mat4
+# from src.graphics.camera import _set_mat4
 
 
 # layout de vértice: posição 2D + UV

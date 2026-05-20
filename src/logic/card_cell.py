@@ -1,5 +1,5 @@
 from typing import Optional
-from src.logic.contracts import Card
+from src.logic.contracts.card import Card
 
 
 class CardCell:

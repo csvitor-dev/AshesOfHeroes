@@ -1,5 +1,5 @@
 from lib.types import GameSide
-from src.logic import CardCell
+from src.logic.card_cell import CardCell
 
 
 class HeroesAegis:
@@ -8,5 +8,5 @@ class HeroesAegis:
         self.__gold = gold
         self.__side = side
         self.__inventory: tuple[CardCell, CardCell, CardCell,
-                              CardCell, CardCell] = (CardCell() for _ in range(5))
+                                CardCell, CardCell] = (CardCell() for _ in range(5))
         self.__aegis_essences = 2

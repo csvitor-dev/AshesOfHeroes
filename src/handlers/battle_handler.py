@@ -1,6 +1,6 @@
 from lib.events import Events
-from src.core import EventManager
-from src.logic.contracts import EntityCard
+from src.core.event import EventManager
+from src.logic.contracts.entity_card import EntityCard
 
 
 class BattleHandler:

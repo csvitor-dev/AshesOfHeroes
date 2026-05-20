@@ -2,7 +2,7 @@ from typing import Any, Optional
 from lib.events import Events
 from src.core.event import EventManager
 from src.core.scene import SceneManager
-from src.logic.contracts import Card
+from src.logic.contracts.card import Card
 
 
 class Input:

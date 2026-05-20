@@ -1,10 +1,13 @@
 from pyglm import glm
 from OpenGL.GL import *
-from src.graphics.objects import ViewBoard
+from src.graphics.objects.view_board import ViewBoard
 # from src.graphics.texture_manager import TextureManager
 # from src.graphics.camera import BoardCamera, _set_mat4
-from src.graphics.rendering import Renderer, HudRenderer
-from src.graphics.primitives import Prism, Sphere, Cylinder
+from src.graphics.rendering.renderer import Renderer
+from src.graphics.rendering.hud_renderer import HudRenderer
+from src.graphics.primitives.cylinder import Cylinder
+from src.graphics.primitives.prism import Prism
+from src.graphics.primitives.sphere import Sphere
 
 
 LAYOUT_POS2D = None
