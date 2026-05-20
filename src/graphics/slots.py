@@ -1,9 +1,32 @@
 from dataclasses import dataclass
-from enum import Enum, auto
 from typing import Optional
 import numpy as np
 from OpenGL.GL import *
-from lib.types import SlotOwner, SlotState
+from pyglm import glm
+from lib.types import SlotOwner, SlotState, SlotKind
+
+
+@dataclass(frozen=True)
+class SlotKey:
+    kind:  SlotKind
+    owner: SlotOwner
+    row:   int = 0
+    col:   int = 0
+
+
+@dataclass
+class SlotRect:
+    key:      SlotKey
+    position: glm.vec2   # canto superior-esquerdo em pixels
+    size:     glm.vec2   # largura × altura em pixels
+
+    @property
+    def center(self) -> glm.vec2:
+        return self.position + self.size * 0.5
+
+    def contains(self, mx: float, my: float) -> bool:
+        return (self.position.x <= mx <= self.position.x + self.size.x and
+                self.position.y <= my <= self.position.y + self.size.y)
 
 
 @dataclass
