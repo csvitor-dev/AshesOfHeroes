@@ -39,3 +39,16 @@ class SlotKind(Enum):
     STAGING = auto()
     INVENTORY = auto()
     DECK = auto()
+
+
+class TurnPhase(Enum):
+    DRAW = auto()
+    MAIN = auto()
+    COMBAT = auto()
+    END = auto()
+
+
+class GamePhase(Enum):
+    MULLIGAN = auto()
+    BATTLE = auto()
+    ENDED = auto()
