@@ -9,9 +9,8 @@ from src.graphics.slots import SlotRect, SlotOwner
 from src.graphics.layouts.board_layout import BoardLayout
 from src.graphics.rendering.renderer import Renderer
 from src.graphics.vertex import VertexLayout, VertexAttribute
-# from src.graphics.texture_manager import TextureManager
+from src.graphics.texture_manager import TextureManager
 from src.graphics.objects.view_card import ViewCard
-# from src.graphics.camera import BoardCamera, _set_mat4
 from lib.events import Events
 
 _BORDER = {
@@ -30,14 +29,12 @@ class ViewBoard:
         event_manager:   EventManager,
         animation_queue: AnimationQueue,
         renderer:        Renderer,
-        textures:        object,  # TextureManager,
-        camera:          object,  # BoardCamera,
+        textures:        TextureManager
     ):
         self.events = event_manager
         self.animation_queue = animation_queue
         self.renderer = renderer
         self.textures = textures
-        self.camera = camera
 
         self.layout = BoardLayout()
 
@@ -54,17 +51,12 @@ class ViewBoard:
                               self._on_card_removed)
 
     def load_assets(self) -> None:
-        self.renderer.load_program(
-            "slot", "shaders/slot.vert", "shaders/slot.frag"
-        )
-        self.renderer.load_program(
-            "card", "shaders/card.vert", "shaders/card.frag"
-        )
+        self.renderer.load_program("board", "model")
         self._upload_slot_borders()
 
     def unload_assets(self) -> None:
-        for card_vis in self.view_cards.values():
-            card_vis.delete()
+        for view_card in self.view_cards.values():
+            view_card.delete()
         self.view_cards.clear()
         self.renderer.delete("slot_borders")
 
@@ -144,8 +136,8 @@ class ViewBoard:
         return self._selected_slot
 
     def update(self, dt: float) -> None:
-        for card_vis in self.view_cards.values():
-            card_vis.update_lerp(dt)
+        for view_card in self.view_cards.values():
+            view_card.update_lerp(dt)
 
     def render(self) -> None:
         self._render_slots()
@@ -154,8 +146,7 @@ class ViewBoard:
     def _render_slots(self):
         proj = self.camera.ortho()
 
-        self.renderer.use("slot")
-        prog = self.renderer.get("slot")
+        prog = self.renderer.use("slot")
 
         _set_mat4(prog, "u_projection", proj)
 
@@ -186,5 +177,5 @@ class ViewBoard:
         prog = self.renderer.get("card")
         proj = self.camera.ortho()
 
-        for card_vis in self.view_cards.values():
-            card_vis.draw(prog, proj)
+        for view_card in self.view_cards.values():
+            view_card.draw(prog, proj)

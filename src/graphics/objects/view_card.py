@@ -1,16 +1,14 @@
 from OpenGL.GL import *
 from pyglm import glm
-from typing import Any
 from src.graphics.rendering.renderer import Renderer
 from src.graphics.vertex import VertexLayout, VertexAttribute
-# from src.graphics.texture_manager import TextureManager
-# from src.graphics.camera import _set_mat4
+from src.graphics.texture_manager import TextureManager
 
 
 # layout de vértice: posição 2D + UV
 _LAYOUT = VertexLayout([
     VertexAttribute("position", GL_FLOAT, 2),
-    VertexAttribute("uv",       GL_FLOAT, 2),
+    VertexAttribute("uv", GL_FLOAT, 2),
 ])
 
 _QUAD_INDICES = [0, 1, 2, 2, 3, 0]
@@ -23,10 +21,10 @@ class ViewCard:
 
     def __init__(
         self,
-        card_id:      object,
+        card_id:      int,
         texture_path: str,
         renderer:     Renderer,
-        textures:     Any,  # TextureManager,
+        textures:     TextureManager,
         position:     glm.vec2,
     ):
         self.card_id = card_id
@@ -70,21 +68,21 @@ class ViewCard:
     def is_moving(self) -> bool:
         return glm.distance(self.position, self._target) > 0.5
 
-    def draw(self, program: int, projection: glm.mat4):
+    def draw(self, program: str, projection: glm.mat4x4):
         model = glm.mat4(1.0)
         model = glm.translate(model, glm.vec3(self.position, 0.0))
         model = glm.scale(model, glm.vec3(self.scale, 1.0))
 
-        _set_mat4(program, "u_model", model)
-        _set_mat4(program, "u_projection", projection)
+        self.renderer.uniform_mat4(program, "model", model)
+        self.renderer.uniform_mat4(program, "projection", projection)
 
-        loc = glGetUniformLocation(program, "u_alpha")
+        loc = glGetUniformLocation(program, "alpha")
         glUniform1f(loc, self.alpha)
 
-        loc = glGetUniformLocation(program, "u_glow")
+        loc = glGetUniformLocation(program, "glow")
         glUniform1f(loc, self.glow)
 
-        loc = glGetUniformLocation(program, "u_texture")
+        loc = glGetUniformLocation(program, "texture")
         glUniform1i(loc, 0)
 
         self.textures.bind(self.texture_path, slot=0)

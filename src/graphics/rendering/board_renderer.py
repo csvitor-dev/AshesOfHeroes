@@ -1,10 +1,11 @@
+from typing import Any
 from pyglm import glm
 from OpenGL.GL import *
 from src.graphics.objects.view_board import ViewBoard
-# from src.graphics.texture_manager import TextureManager
-# from src.graphics.camera import BoardCamera, _set_mat4
+from src.graphics.texture_manager import TextureManager
 from src.graphics.rendering.renderer import Renderer
 from src.graphics.rendering.hud_renderer import HudRenderer
+from src.graphics.primitives.entity_3d import Entity3D
 from src.graphics.primitives.cylinder import Cylinder
 from src.graphics.primitives.prism import Prism
 from src.graphics.primitives.sphere import Sphere
@@ -18,14 +19,12 @@ class BoardRenderer:
     def __init__(
         self,
         renderer: Renderer,
-        # textures: TextureManager,
-        # camera:   BoardCamera,
+        textures: TextureManager,
         view_board: ViewBoard,
-        hud:      HudRenderer,
+        hud: HudRenderer,
     ):
         self.renderer = renderer
-        # self.textures = textures
-        # self.camera = camera
+        self.textures = textures
         self.view_board = view_board
         self.hud = hud
 
@@ -33,11 +32,10 @@ class BoardRenderer:
         self._load_shaders()
 
     def _load_shaders(self):
-        self.renderer.load_program(
-            "aegis", "shaders/aegis.vert", "shaders/aegis.frag")
+        self.renderer.load_program("aegis", "model")
 
     def _build_aegis(self):
-        self._aegis_opp = [
+        self._aegis_opp: list[Entity3D] = [
             self._make_prism(pos=glm.vec3(0, 0, -1.5),
                              color=glm.vec4(0.9, 0.3, 0.3, 1)),
             self._make_sphere(pos=glm.vec3(0, 0.65, -1.5),
@@ -45,7 +43,7 @@ class BoardRenderer:
             self._make_cylinder(pos=glm.vec3(0, -0.5, -1.5),
                                 color=glm.vec4(0.5, 0.2, 0.2, 1)),
         ]
-        self._aegis_pl = [
+        self._aegis_pl: list[Entity3D] = [
             self._make_prism(pos=glm.vec3(0, 0, 1.5),
                              color=glm.vec4(0.3, 0.5, 1.0, 1)),
             self._make_sphere(pos=glm.vec3(0, 0.65, 1.5),
@@ -74,24 +72,20 @@ class BoardRenderer:
         return c
 
     def update(self, dt: float):
-        # self.camera.update(dt)
         self.view_board.update(dt)
 
-    def render(self, game_state: dict) -> None:
+    def render(self, game_state: Any) -> None:
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
 
         self._render_3d()
         self._render_2d()
-        self._render_hud(game_state)
+        self.hud.render(game_state)
 
     def _render_3d(self):
         glEnable(GL_DEPTH_TEST)
         glDepthFunc(GL_LESS)
 
-        self.renderer.use("aegis")
-        prog = self.renderer._programs["aegis"]
-
-        # self.camera.upload_3d(prog)
+        prog = self.renderer.use("aegis")
 
         for obj in self._all_3d:
             obj.draw(prog)
@@ -104,12 +98,8 @@ class BoardRenderer:
 
         self.view_board.render()
 
-    def _render_hud(self, game_state):
-        self.hud.render(game_state)
-
     def on_resize(self, width: int, height: int):
         glViewport(0, 0, width, height)
-        # self.camera.on_resize(width, height)
 
     def delete(self):
         for obj in self._all_3d:
