@@ -9,14 +9,22 @@ def framebuffer_size_callback(window, width, height):
 
 
 class Window:
-    def __init__(self, width: int, height: int, event_manager: EventManager):
+    def __init__(self, width: int, height: int, title: str, event_manager: EventManager):
         self.__width = width
         self.__height = height
-        self.__title = "Ashe of Heroes"
+        self.__title = title
         self.__events = event_manager
         self.__handle = None
 
         self.__initialize_glfw()
+
+    @property
+    def width(self):
+        return self.__width
+
+    @property
+    def height(self):
+        return self.__height
 
     def set_title(self, title: str):
         self.__title = title
