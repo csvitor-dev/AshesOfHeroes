@@ -2,28 +2,36 @@ import math
 import numpy as np
 from OpenGL.GL import *
 from pyglm import glm
+
 from src.graphics.rendering.renderer import Renderer
 from src.graphics.vertex import VertexLayout, VertexAttribute
+from src.graphics.rendering.font_renderer import FontRenderer
 
 
 W, H = 1280, 720
 
-_COLOR_TEXT_PRIMARY = glm.vec4(0.92, 0.91, 0.88, 1.00)
-_COLOR_TEXT_SECONDARY = glm.vec4(0.65, 0.64, 0.61, 1.00)
-_COLOR_TEXT_TERTIARY = glm.vec4(0.42, 0.41, 0.40, 1.00)
-_COLOR_BORDER = glm.vec4(0.55, 0.54, 0.52, 0.40)
-_COLOR_BTN_HOVER = glm.vec4(1.00, 1.00, 1.00, 0.06)
 _COLOR_BG = glm.vec4(0.07, 0.07, 0.08, 1.00)
+_COLOR_BORDER = glm.vec4(0.55, 0.54, 0.52, 0.40)
+_COLOR_BORDER_HOVER = glm.vec4(0.92, 0.91, 0.88, 0.90)
+_COLOR_BTN_HOVER_FILL = glm.vec4(1.00, 1.00, 1.00, 0.06)
+_COLOR_TITLE = glm.vec4(0.80, 0.80, 0.90, 1.00)
+_COLOR_BTN_PRIMARY = glm.vec4(0.92, 0.91, 0.88, 1.00)
+_COLOR_BTN_EXIT = glm.vec4(0.55, 0.54, 0.52, 1.00)
 
 _LAYOUT_POS2 = VertexLayout([VertexAttribute("position", GL_FLOAT, 2)])
 
 
 class Button:
-    def __init__(self, cx: float, cy: float, w: float, h: float, label: str, key: str):
+    def __init__(self, cx: float, cy: float, w: float, h: float,
+                 label: str, key: str,
+                 font_size: int = 28,
+                 color: glm.vec4 = _COLOR_BTN_PRIMARY):
         self.cx, self.cy = cx, cy
-        self.w,  self.h = w, h
+        self.w,  self.h = w,  h
         self.label = label
         self.key = key
+        self.font_size = font_size
+        self.color = glm.vec4(color)
         self.hovered = False
 
     def contains(self, mx: float, my: float) -> bool:
@@ -44,32 +52,115 @@ class Button:
 
 
 class MenuRenderer:
-
     def __init__(self, renderer: Renderer):
         self.renderer = renderer
         self._t = 0.0
-        self._proj = glm.ortho(0, float(W), float(H), 0, -1, 1)
-        self._alpha_enter = 0.0
+        self._alpha = 0.0
+        self.title = FontRenderer(
+            font_name="CinzelDecorative-Bold",
+            renderer=self.renderer,
+            size_px=72,
+        )
+        self.subtitle = FontRenderer(
+            font_name="CinzelDecorative-Regular",
+            renderer=self.renderer,
+            size_px=32,
+        )
 
         cx = W / 2
         self._buttons = [
-            Button(cx, H/2 + 20,  260, 48, "Battleground", "battle"),
-            Button(cx, H/2 + 82,  260, 34, "Sair",         "exit"),
+            Button(
+                cx=cx, cy=H / 2 + 20,
+                w=360, h=52,
+                label="Campo de Batalha",
+                key="battle",
+                font_size=26,
+                color=_COLOR_BTN_PRIMARY,
+            ),
+            Button(
+                cx=cx, cy=H / 2 + 90,
+                w=360, h=38,
+                label="Sair",
+                key="exit",
+                font_size=20,
+                color=_COLOR_BTN_EXIT,
+            ),
         ]
-        self._build_logo()
+
+        self._fonts: dict[int, FontRenderer] = {
+            72: self.title, 32: self.subtitle}
+        self._build_hex_logo()
 
     def load_assets(self) -> None:
         self.renderer.load_program("scenes", "menu")
+        self.title.load()
+        self.subtitle.load()
+
+        sizes = {btn.font_size for btn in self._buttons}
+
+        for size in sizes:
+            fr = FontRenderer(
+                font_name="CinzelDecorative-Regular",
+                renderer=self.renderer,
+                size_px=size,
+            )
+            fr.load()
+            self._fonts[size] = fr
         self._upload_geometry()
 
     def unload_assets(self) -> None:
-        for key in ("menu_bg", "hex_outer", "hex_inner", "hex_dot",
-                    "btn_battle_bg", "btn_battle_border",
-                    "btn_exit_border"):
+        self.title.unload()
+        self.subtitle.unload()
+
+        for fr in self._fonts.values():
+            fr.unload()
+        self._fonts.clear()
+
+        for key in ("menu_bg", "hex_outer", "hex_inner", "hex_dot"):
             self.renderer.delete(key)
 
-    def _build_logo(self):
-        cx, cy = W / 2, H / 2 - 130
+        for btn in self._buttons:
+            self.renderer.delete(f"btn_{btn.key}_bg")
+            self.renderer.delete(f"btn_{btn.key}_border")
+
+    def _font(self, size: int) -> FontRenderer:
+        return self._fonts[size]
+
+    def _draw_text_centered(
+        self,
+        text:  str,
+        cx:    float,
+        cy:    float,
+        size:  int,
+        color: glm.vec4,
+        proj:  glm.mat4,
+    ) -> None:
+        self._font(size).draw(
+            text=text,
+            x=cx,
+            y=cy + size * 0.35,
+            color=color,
+            projection=proj,
+            scale=1.0,
+            anchor_x="center",
+        )
+
+    def update(self, t: float) -> None:
+        self._t = t
+        self._alpha = min(1.0, t / 0.6)
+
+    def hit_test(self, mx: float, my: float) -> str | None:
+        for btn in self._buttons:
+            if btn.contains(mx, my):
+                return btn.key
+        return None
+
+    def set_hover(self, mx: float, my: float) -> None:
+        for btn in self._buttons:
+            btn.hovered = btn.contains(mx, my)
+
+    def _build_hex_logo(self):
+        cx, cy = W / 2, H / 2 - 110
         self._hex_center = glm.vec2(cx, cy)
 
         def hex_verts(r: int):
@@ -91,8 +182,7 @@ class MenuRenderer:
         self.renderer.upload("hex_outer", self._hex_outer_verts, _LAYOUT_POS2)
         self.renderer.upload("hex_inner", self._hex_inner_verts, _LAYOUT_POS2)
 
-        dc = self._dot_cx
-        dy = self._dot_cy
+        dc, dy = self._dot_cx, self._dot_cy
         dot = np.array([dc-4, dy-4, dc+4, dy-4, dc+4, dy+4, dc-4, dy+4],
                        dtype=np.float32)
         self.renderer.upload("hex_dot", dot, _LAYOUT_POS2,
@@ -105,84 +195,120 @@ class MenuRenderer:
             self.renderer.upload(f"btn_{btn.key}_border",
                                  btn.border_verts(), _LAYOUT_POS2)
 
-    def update(self, t: float) -> None:
-        self._t = t
-        self._alpha_enter = min(1.0, t / 0.6)
-
-    def hit_test(self, mx: float, my: float) -> str | None:
-        for btn in self._buttons:
-            if btn.contains(mx, my):
-                return btn.key
-        return None
-
-    def set_hover(self, mx: float, my: float) -> None:
-        for btn in self._buttons:
-            btn.hovered = btn.contains(mx, my)
-
-    def render(self) -> None:
+    def render(self, proj: glm.mat4) -> None:
         glDisable(GL_DEPTH_TEST)
         glEnable(GL_BLEND)
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
 
+        a = self._alpha
+
+        self._render_background(proj)
+        self._render_logo(proj, a)
+        self._render_title(proj, a)
+        self._render_buttons(proj, a)
+
+    def _render_background(self, proj: glm.mat4):
         prog = self.renderer.use("scenes_menu")
-
-        self.up_proj(prog, self._proj)
-
-        self.up_color(prog, _COLOR_BG)
-        self.up_alpha(prog, 1.0)
+        _up_proj(prog, proj)
+        _up_color(prog, _COLOR_BG)
+        _up_alpha(prog, 1.0)
         self.renderer.draw("menu_bg")
 
-        a = self._alpha_enter
+    def _render_logo(self, proj: glm.mat4, a: float):
+        prog = self.renderer.use("scenes_menu")
+        _up_proj(prog, proj)
 
         pulse = 0.55 + 0.20 * math.sin(self._t * 1.8)
-        border_a = pulse * a
 
-        self.up_color(prog, glm.vec4(0.55, 0.54, 0.52, border_a))
-        self.up_alpha(prog, border_a)
+        _up_color(prog, glm.vec4(0.55, 0.54, 0.52, pulse * a))
+        _up_alpha(prog, pulse * a)
         glBindVertexArray(self.renderer.get_vao_id_by_key("hex_outer"))
         glDrawArrays(GL_LINE_LOOP, 0, 6)
         glBindVertexArray(0)
 
         inner_a = (0.35 + 0.15 * math.sin(self._t * 1.8 + 0.4)) * a
-        self.up_color(prog, glm.vec4(0.55, 0.54, 0.52, inner_a))
-        self.up_alpha(prog, inner_a)
+        _up_color(prog, glm.vec4(0.55, 0.54, 0.52, inner_a))
+        _up_alpha(prog, inner_a)
         glBindVertexArray(self.renderer.get_vao_id_by_key("hex_inner"))
         glDrawArrays(GL_LINE_LOOP, 0, 6)
         glBindVertexArray(0)
 
-        dot_a = (0.50 + 0.20 * math.sin(self._t * 1.8)) * a
-        self.up_color(prog, glm.vec4(0.55, 0.54, 0.52, dot_a))
-        self.up_alpha(prog, dot_a)
+        _up_color(prog, glm.vec4(0.55, 0.54, 0.52, pulse * a))
+        _up_alpha(prog, pulse * a)
         self.renderer.draw("hex_dot")
 
+    def _render_title(self, proj: glm.mat4, a: float):
+        self._draw_text_centered(
+            text="ASHES OF HEROES",
+            cx=W / 2,
+            cy=H / 2 - 260,
+            size=72,
+            color=glm.vec4(_COLOR_TITLE.x, _COLOR_TITLE.y,
+                           _COLOR_TITLE.z, _COLOR_TITLE.w * a),
+            proj=proj,
+        )
+        self._draw_text_centered(
+            text="Escolha seu destino",
+            cx=W / 2,
+            cy=H / 2 - 200,
+            size=32,
+            color=glm.vec4(0.60, 0.58, 0.55, 0.65 * a),
+            proj=proj,
+        )
+
+    def _render_buttons(self, proj: glm.mat4, a: float):
+        prog = self.renderer.use("scenes_menu")
+        _up_proj(prog, proj)
+
         for btn in self._buttons:
-            is_battle = btn.key == "battle"
+            self._render_button_bg(btn, prog, a)
+            self._render_button_border(btn, prog, a)
+            self._render_button_label(btn, proj, a)
 
-            if btn.hovered and is_battle:
-                self.up_color(prog, _COLOR_BTN_HOVER)
-                self.up_alpha(prog, a)
-                self.renderer.draw(f"btn_{btn.key}_bg")
+    def _render_button_bg(self, btn: Button, prog: int, a: float):
+        if btn.hovered and btn.key == "battle":
+            _up_color(prog, _COLOR_BTN_HOVER_FILL)
+            _up_alpha(prog, a)
+            self.renderer.draw(f"btn_{btn.key}_bg")
 
-            border_color = (_COLOR_TEXT_SECONDARY if btn.hovered
-                            else _COLOR_BORDER)
-            if not is_battle:
-                border_color = glm.vec4(0, 0, 0, 0)
+    def _render_button_border(self, btn: Button, prog: int, a: float):
+        if btn.key == "exit":
+            return
+        border = _COLOR_BORDER_HOVER if btn.hovered else _COLOR_BORDER
+        _up_color(prog, border)
+        _up_alpha(prog, a)
+        glBindVertexArray(self.renderer.get_vao_id_by_key(
+            f"btn_{btn.key}_border"))
+        glDrawArrays(GL_LINE_LOOP, 0, 4)
+        glBindVertexArray(0)
 
-            self.up_color(prog, border_color)
-            self.up_alpha(prog, a)
-            glBindVertexArray(self.renderer.get_vao_id_by_key(
-                f"btn_{btn.key}_border"))
-            glDrawArrays(GL_LINE_LOOP, 0, 4)
-            glBindVertexArray(0)
+    def _render_button_label(self, btn: Button, proj: glm.mat4, a: float):
+        base = btn.color
+        boost = 0.15 if btn.hovered else 0.0
+        color = glm.vec4(
+            min(1.0, base.x + boost),
+            min(1.0, base.y + boost),
+            min(1.0, base.z + boost),
+            base.w * a,
+        )
+        self._draw_text_centered(
+            text=btn.label,
+            cx=btn.cx,
+            cy=btn.cy,
+            size=btn.font_size,
+            color=color,
+            proj=proj,
+        )
 
-    def up_proj(self, prog: int, proj: glm.mat4):
-        loc = glGetUniformLocation(prog, "projection")
-        glUniformMatrix4fv(loc, 1, GL_FALSE, glm.value_ptr(proj))
 
-    def up_color(self, prog: int, c: glm.vec4):
-        loc = glGetUniformLocation(prog, "color")
-        glUniform4f(loc, c.x, c.y, c.z, c.w)
+def _up_proj(prog: int, proj: glm.mat4):
+    glUniformMatrix4fv(glGetUniformLocation(prog, "projection"),
+                       1, GL_FALSE, glm.value_ptr(proj))
 
-    def up_alpha(self, prog: int, a: float):
-        loc = glGetUniformLocation(prog, "alpha")
-        glUniform1f(loc, a)
+
+def _up_color(prog: int, c: glm.vec4):
+    glUniform4f(glGetUniformLocation(prog, "color"), c.x, c.y, c.z, c.w)
+
+
+def _up_alpha(prog: int, a: float):
+    glUniform1f(glGetUniformLocation(prog, "alpha"), a)

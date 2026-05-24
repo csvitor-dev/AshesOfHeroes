@@ -2,6 +2,7 @@ from abc import ABC, abstractmethod
 from collections import deque
 from typing import Any, Callable
 from src.core.event import EventManager
+from src.graphics.camera import Camera
 
 
 class SceneManager:
@@ -65,9 +66,10 @@ class SceneManager:
 
 
 class Scene(ABC):
-    def __init__(self, event_manager: EventManager, scene_manager: SceneManager):
+    def __init__(self, event_manager: EventManager, scene_manager: SceneManager, camera: Camera):
         self._events = event_manager
         self._scenes = scene_manager
+        self._camera = camera
 
     @abstractmethod
     def on_enter(self, **params: Any) -> None: ...
