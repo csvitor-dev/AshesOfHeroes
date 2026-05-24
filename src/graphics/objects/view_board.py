@@ -51,14 +51,13 @@ class ViewBoard:
                               self._on_card_removed)
 
     def load_assets(self) -> None:
-        self.renderer.load_program("board", "model")
         self._upload_slot_borders()
 
     def unload_assets(self) -> None:
         for view_card in self.view_cards.values():
             view_card.delete()
         self.view_cards.clear()
-        self.renderer.delete("slot_borders")
+        self.renderer.delete("scenes_battleground")
 
     def _upload_slot_borders(self):
         layout = VertexLayout([VertexAttribute("position", GL_FLOAT, 2)])
@@ -139,27 +138,25 @@ class ViewBoard:
         for view_card in self.view_cards.values():
             view_card.update_lerp(dt)
 
-    def render(self) -> None:
-        self._render_slots()
-        self._render_cards()
+    def render(self, projection: glm.mat4x4) -> None:
+        self._render_slots(projection)
+        self._render_cards(projection)
 
-    def _render_slots(self):
-        proj = self.camera.ortho()
+    def _render_slots(self, projection: glm.mat4x4):
+        prog = self.renderer.use("scenes_battleground")
+        self.renderer.uniform_mat4(
+            "scenes_battleground", "projection", projection)
 
-        prog = self.renderer.use("slot")
-
-        _set_mat4(prog, "u_projection", proj)
-
-        glBindVertexArray(self.renderer._vaos["slot_borders"])
+        glBindVertexArray(
+            self.renderer.get_vao_id_by_key("slot_borders"))
 
         for i, slot in enumerate(self._slot_list):
             color = self._border_color(slot)
 
-            loc = glGetUniformLocation(prog, "u_color")
+            loc = glGetUniformLocation(prog, "color")
             glUniform4f(loc, color.x, color.y, color.z, color.w)
 
             glDrawArrays(GL_LINE_LOOP, i * 4, 4)
-
         glBindVertexArray(0)
 
     def _border_color(self, slot: SlotRect) -> glm.vec4:
@@ -169,13 +166,9 @@ class ViewBoard:
             return _BORDER_HOVER
         return _BORDER.get(slot.key.owner, glm.vec4(0.6, 0.6, 0.6, 0.7))
 
-    def _render_cards(self):
+    def _render_cards(self, projection: glm.mat4x4):
         glEnable(GL_BLEND)
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
 
-        self.renderer.use("card")
-        prog = self.renderer.get("card")
-        proj = self.camera.ortho()
-
         for view_card in self.view_cards.values():
-            view_card.draw(prog, proj)
+            view_card.draw("objects_card", projection)

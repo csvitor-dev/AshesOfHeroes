@@ -1,57 +1,82 @@
 from typing import Any
-from lib.events import Events
-from src.core.scene import Scene, SceneManager
+from OpenGL.GL import *
+from pyglm import glm
+import glfw
+
 from src.core.event import EventManager
-from src.mechanics.match_logic import MatchLogic
-from src.graphics.objects.view_board import ViewBoard
+from src.core.scene import Scene, SceneManager
 from src.core.animation import AnimationQueue
+from src.graphics.camera import Camera
+from src.graphics.rendering.renderer import Renderer
+from src.graphics.texture_manager import TextureManager
+from src.graphics.rendering.battleground_renderer import BattlegroundRenderer
+from src.logic.game_state import GameState
 
 
 class BattlegroundScene(Scene):
     def __init__(
         self,
         event_manager: EventManager,
-        scene_manager: SceneManager
+        scene_manager: SceneManager,
+        camera:        Camera,
+        renderer:      Renderer,
+        game_state:    GameState,
     ):
-        super().__init__(event_manager, scene_manager)
-
-        self.__animation_queue = AnimationQueue()
-        self.__match_logic = MatchLogic(self._events)
-        self.__board = ViewBoard(self._events, self.__animation_queue)
+        super().__init__(event_manager, scene_manager, camera)
+        self._renderer = renderer
+        self._game_state = game_state
+        self._animation_queue: AnimationQueue | None = None
+        self._board: BattlegroundRenderer | None = None
 
     def on_enter(self, **params: Any) -> None:
-        print(
-            f"Iniciando Batalha! Decks: {params.get('player_deck_id')} vs {params.get('enemy_deck_id')}")
-        self.__board.load_assets()
-
-        self.__match_logic.setup_match(params.get(
-            'player_deck_id'), params.get('enemy_deck_id'))
-
-        self._events.subscribe(
-            Events.ACTION_PAUSE_GAME, self._on_pause_requested)
-
-        self.__match_logic.start_game()
+        self._animation_queue = AnimationQueue()
+        self._board = BattlegroundRenderer(
+            renderer=self._renderer,
+            event_manager=self._events,
+            animation_queue=self._animation_queue,
+            textures=TextureManager(),
+            game_state=self._game_state,
+        )
+        self._board.load_assets()
 
     def on_exit(self) -> None:
-        print("Encerrando Batalha e limpando memória GPU...")
-        self.__board.unload_assets()
+        if self._board:
+            self._board.unload_assets()
+            self._board = None
+        self._animation_queue = None
 
-    def on_pause(self):
-        print("Batalha pausada (outra cena sobreposta).")
+    def on_pause(self) -> None: ...
 
-    def _on_pause_requested(self, data: Any) -> None:
-        # Empilha a cena de pausa sem destruir a batalha
-        self._scenes.push_scene("pause")
-
-    def handle_input(self):
-        ...
+    def on_resume(self) -> None: ...
 
     def update(self, dt: float) -> None:
-        self.__animation_queue.update(dt)
+        if self._animation_queue:
+            self._animation_queue.update(dt)
 
-        if not self.__animation_queue.is_busy():
-            self.__match_logic.update(dt)
-        self.__board.update(dt)
+        if self._board:
+            self._board.update(dt)
 
-    def render(self):
-        self.__board.render()
+    def render(self) -> None:
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
+
+        if self._board:
+            self._board.render(
+                proj3d=glm.mul(self._camera.projection(), self._camera.view()),
+                proj2d=self._camera.ortho(),
+            )
+
+    def handle_input(self) -> None: ...
+
+    def on_key(self, key: int, action: int) -> None:
+        if action != glfw.PRESS:
+            return
+        if key == glfw.KEY_ESCAPE:
+            self._scenes.pop_scene()
+
+    def on_mouse_move(self, mx: float, my: float) -> None:
+        if self._board:
+            self._board.on_mouse_move(mx, my)
+
+    def on_mouse_click(self, mx: float, my: float) -> None:
+        if self._board:
+            self._board.on_mouse_click(mx, my)

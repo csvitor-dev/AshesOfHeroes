@@ -39,9 +39,13 @@ class Renderer:
         self.__programs[f"{scope}_{filename}"] = program
         return program
 
-    def use(self, name: str):
-        glUseProgram(self.__programs[name])
-        return self.__programs[name]
+    def use(self, key: str) -> int:
+        prog = self.__programs.get(key)
+        if prog is None:
+            raise RuntimeError(
+                f"Shader '{key}' não carregado. Chame load_program primeiro.")
+        glUseProgram(prog)
+        return prog
 
     def get_vao_id_by_key(self, key: str) -> int | None:
         buffer = self.__buffers.get(key)
@@ -148,4 +152,4 @@ class Renderer:
 
     def uniform_mat4(self, prog: str, name: str, matrix: glm.mat4x4):
         loc = glGetUniformLocation(self.__programs[prog], name)
-        glUniformMatrix4fv(loc, 1, GL_FALSE, matrix)
+        glUniformMatrix4fv(loc, 1, GL_FALSE, glm.value_ptr(matrix))

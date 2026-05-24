@@ -46,22 +46,22 @@ class Entity3D:
         glBindVertexArray(0)
 
     def model_matrix(self) -> glm.mat4x4:
-        model = glm.translate(glm.mat4(1.0), self.position)
+        model = glm.translate(glm.mat4(1.0), self.position) 
         model = glm.rotateX(model, glm.radians(
-            self.rotation.x)) if self.rotation.x != 0.0 else M
+            self.rotation.x)) if self.rotation.x != 0.0 else model
         model = glm.rotateY(model, glm.radians(
-            self.rotation.y)) if self.rotation.y != 0.0 else M
+            self.rotation.y)) if self.rotation.y != 0.0 else model
         model = glm.rotateZ(model, glm.radians(
-            self.rotation.z)) if self.rotation.z != 0.0 else M
+            self.rotation.z)) if self.rotation.z != 0.0 else model
         model = glm.scale(model, self.scale)
         return model
 
     def draw(self, shader_program: int):
-        loc_model = glGetUniformLocation(shader_program, "u_model")
-        loc_color = glGetUniformLocation(shader_program, "u_color")
+        loc_model = glGetUniformLocation(shader_program, "model")
+        loc_color = glGetUniformLocation(shader_program, "color")
 
-        glUniformMatrix4fv(loc_model, 1, GL_FALSE, self.model_matrix())
-        glUniform4fv(loc_color, 1, self.color)
+        glUniformMatrix4fv(loc_model, 1, GL_FALSE, glm.value_ptr(self.model_matrix()))
+        glUniform4fv(loc_color, 1, glm.value_ptr(self.color))
 
         glBindVertexArray(self._vao)
         glDrawElements(GL_TRIANGLES, self._index_count, GL_UNSIGNED_INT, None)
