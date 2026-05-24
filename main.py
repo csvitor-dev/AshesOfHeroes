@@ -18,10 +18,12 @@ def main():
             event_manager=s["events"],
             scene_manager=s["scenes"],
             renderer=s["renderer"],
+            camera=s["camera"]
         ))
         .add_scene("battle", lambda s: BattlegroundScene(
             event_manager=s["events"],
             scene_manager=s["scenes"],
+            camera=s["camera"]
         ))
         .set_initial_scene("menu")
     )

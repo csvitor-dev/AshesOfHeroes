@@ -27,7 +27,11 @@ class Bootstrap:
             self.builder.camera.get("near", 0.1),
             self.builder.camera.get("far", 100.0),
         )
-        services: dict[str, Any] = {"events": events, "window": window}
+        services: dict[str, Any] = {
+            "events": events,
+            "window": window,
+            "camera": camera,
+        }
 
         for name, factory in self.builder.factories.items():
             if factory is None:
