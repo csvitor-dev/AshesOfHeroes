@@ -2,13 +2,14 @@ from dataclasses import dataclass
 from typing import Optional
 import numpy as np
 from OpenGL.GL import *
-from OpenGL.GL import shaders
+from OpenGL.GL import shaders as gls
+from pyglm import glm
 from src.graphics.vertex import VertexLayout
 from src.utils.filesystem import read_vertex_shader, read_fragment_shader
 
 
 @dataclass
-class _BufferSet:
+class BufferSet:
     vao:      int
     vbo:      int
     ebo:      Optional[int]
@@ -18,31 +19,33 @@ class _BufferSet:
 
 class Renderer:
     def __init__(self):
-        self.__buffers: dict[str, _BufferSet] = {}
+        self.__buffers: dict[str, BufferSet] = {}
         self.__programs: dict[str, int] = {}
 
         glEnable(GL_BLEND)
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
 
-    def load_program(self, name: str, scope: str, filename: str) -> int:
+    def load_program(self, scope: str, filename: str) -> int:
         vertex_src = read_vertex_shader(scope, filename)
         fragment_src = read_fragment_shader(scope, filename)
 
-        vertex_shader = shaders.compileShader(vertex_src, GL_VERTEX_SHADER)
-        fragment_shader = shaders.compileShader(
+        vertex_shader = gls.compileShader(vertex_src, GL_VERTEX_SHADER)
+        fragment_shader = gls.compileShader(
             fragment_src, GL_FRAGMENT_SHADER)
-        program = shaders.compileProgram(vertex_shader, fragment_shader)
+        program = gls.compileProgram(vertex_shader, fragment_shader)
         glDeleteShader(vertex_shader)
         glDeleteShader(fragment_shader)
 
-        self.__programs[name] = program
+        self.__programs[f"{scope}_{filename}"] = program
         return program
 
     def use(self, name: str):
         glUseProgram(self.__programs[name])
-
-    def get(self, name: str) -> int:
         return self.__programs[name]
+
+    def get_vao_id_by_key(self, key: str) -> int | None:
+        buffer = self.__buffers.get(key)
+        return buffer.vao if buffer is not None else None
 
     def upload(
         self,
@@ -72,7 +75,7 @@ class Renderer:
         glBindBuffer(GL_ARRAY_BUFFER, 0)
         glBindVertexArray(0)
 
-        self.__buffers[name] = _BufferSet(
+        self.__buffers[name] = BufferSet(
             vao=vao, vbo=vbo, ebo=ebo,
             count=index_count if indices is not None else vertex_count,
             indexed=indices is not None,
@@ -143,6 +146,6 @@ class Renderer:
         loc = glGetUniformLocation(self.__programs[prog], name)
         glUniform1i(loc, value)
 
-    def uniform_mat4(self, prog: str, name: str, matrix: np.ndarray):
+    def uniform_mat4(self, prog: str, name: str, matrix: glm.mat4x4):
         loc = glGetUniformLocation(self.__programs[prog], name)
-        glUniformMatrix4fv(loc, 1, GL_FALSE, matrix.astype(np.float32))
+        glUniformMatrix4fv(loc, 1, GL_FALSE, matrix)
