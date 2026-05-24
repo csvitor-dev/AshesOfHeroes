@@ -17,3 +17,12 @@ def read_vertex_shader(scope: str, filename: str) -> str:
 
 def read_fragment_shader(scope: str, filename: str) -> str:
     return read_file(f"shaders/{scope}/{filename}.fragment.glsl")
+
+
+def get_asset_path(scope: str, filename: str) -> str:
+    abs_path = path.abspath(f"assets/{scope}/{filename}")
+    target_path = Path(abs_path)
+
+    if target_path.exists() is False:
+        raise FileExistsError
+    return abs_path
