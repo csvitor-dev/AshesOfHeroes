@@ -1,4 +1,4 @@
-import glm
+from pyglm import glm
 from src.graphics.slots import SlotKey, SlotRect, SlotKind, SlotOwner
 
 

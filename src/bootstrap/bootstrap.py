@@ -3,6 +3,7 @@ from src.core.engine import Engine
 from src.core.event import EventManager
 from src.core.scene import SceneManager
 from src.core.window import Window
+from src.graphics.camera import Camera
 from src.bootstrap.engine_builder import EngineBuilder
 
 
@@ -16,7 +17,15 @@ class Bootstrap:
         window = Window(
             self.builder.window.get("width", 1280),
             self.builder.window.get("height", 720),
+            self.builder.window.get("title", "Ashe of Heroes"),
             events
+        )
+        camera = Camera(
+            self.builder.camera.get("width", 1280),
+            self.builder.camera.get("height", 720),
+            self.builder.camera.get("fov", 45.0),
+            self.builder.camera.get("near", 0.1),
+            self.builder.camera.get("far", 100.0),
         )
         services: dict[str, Any] = {"events": events, "window": window}
 
@@ -28,12 +37,10 @@ class Bootstrap:
             except TypeError:
                 services[name] = factory()
 
-        if "camera" not in services and "camera" in self.builder.factories:
-            ...
         scenes = SceneManager(events)
         services["scenes"] = scenes
 
-        for key, scene_factory in self.builder.scene_reg.items():
+        for key, scene_factory in self.builder.scenes.items():
             scenes.register(key, lambda sf=scene_factory: sf(services))
 
         if self.builder.initial_scene:
@@ -43,5 +50,6 @@ class Bootstrap:
             window=window,
             events=events,
             scenes=scenes,
+            camera=camera,
             services=services,
         )

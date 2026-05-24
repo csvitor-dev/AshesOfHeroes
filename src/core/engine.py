@@ -1,9 +1,11 @@
+import glfw
 from OpenGL.GL import *
 import time
 from typing import Any
 from src.core.event import EventManager
 from src.core.scene import SceneManager
 from src.core.window import Window
+from src.graphics.camera import Camera
 
 
 class Engine:
@@ -13,12 +15,14 @@ class Engine:
         window: Window,
         events: EventManager,
         scenes: SceneManager,
+        camera: Camera,
         services: dict[str, Any],
     ):
 
         self.__window = window
         self.__events = events
         self.__scenes = scenes
+        self.__camera = camera
         self.__services = services
 
         self.__is_running = True
@@ -27,14 +31,13 @@ class Engine:
     def run(self) -> None:
         while self.__is_running and not self.__window.should_close():
             dt = self.__tick()
-
             self.__window.poll_events()
-
             self.__update(dt)
             self.__render()
         self.__shutdown()
 
     def __update(self, dt: float) -> None:
+        self.__camera.update(dt)      # lerp da rotação
         self.__scenes.update(dt)
 
     def __render(self) -> None:
@@ -45,7 +48,6 @@ class Engine:
     def __tick(self) -> float:
         now = time.time()
         dt = now - self.__last_frame_time
-
         self.__last_frame_time = now
         return dt
 
@@ -53,38 +55,5 @@ class Engine:
         self.__scenes.clear()
         self.__window.shutdown()
 
-    def get_service(self, name: str):
+    def get(self, name: str):
         return self.__services.get(name)
-
-# renderer = GenericRenderer()
-# textures = TextureManager()
-# camera   = BoardCamera(width=1280, height=720)
-
-# # 2. ViewBoard — conhece eventos e estado
-# view_board = ViewBoard(
-#     event_manager   = event_manager,
-#     animation_queue = animation_queue,
-#     renderer        = renderer,
-#     textures        = textures,
-#     camera          = camera,
-# )
-# view_board.load_assets()   # compila shaders de slot/card
-
-# # 3. HUD — independente do ViewBoard
-# hud = HUDRenderer(renderer)
-
-# # 4. BoardRenderer — recebe tudo pronto, só orquestra
-# board_renderer = BoardRenderer(
-#     renderer   = renderer,
-#     textures   = textures,
-#     camera     = camera,
-#     view_board = view_board,   # injetado
-#     hud        = hud,
-# )
-
-# # game loop
-# while running:
-#     dt = clock.tick()
-#     board_renderer.update(dt)
-#     board_renderer.render(game_state)
-#     window.swap_buffers()
