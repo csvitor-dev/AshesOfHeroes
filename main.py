@@ -10,6 +10,7 @@ from src.graphics.texture_manager import TextureManager
 def main():
     builder = (
         EngineBuilder()
+        .init_game()
         .set_window(width=1280, height=720, title="Ashe of Heroes")
         .set_camera(fov=45.0, near=0.1, far=100.0)
         .use("renderer", lambda _: Renderer())
@@ -23,7 +24,9 @@ def main():
         .add_scene("battle", lambda s: BattlegroundScene(
             event_manager=s["events"],
             scene_manager=s["scenes"],
-            camera=s["camera"]
+            renderer=s["renderer"],
+            camera=s["camera"],
+            game_state=s["game_state"]
         ))
         .set_initial_scene("menu")
     )

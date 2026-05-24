@@ -31,6 +31,7 @@ class Bootstrap:
             "events": events,
             "window": window,
             "camera": camera,
+            "game_state": self.builder.game_state,
         }
 
         for name, factory in self.builder.factories.items():

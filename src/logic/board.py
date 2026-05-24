@@ -1,3 +1,4 @@
+from typing import Optional
 from lib.types import GameSide
 from src.logic.contracts.card import Card
 from src.logic.card_cell import CardCell
@@ -7,20 +8,40 @@ from src.logic.stage import Stage
 
 
 class Board:
-    def __init__(self, red_deck: CardDeck, blue_deck: CardDeck):
+    def __init__(self):
         self.__stagging = Stage()
         self.__red_aegis = HeroesAegis(1000, 100, GameSide.RED)
-        self.__red_deck = red_deck
+        self.__red_deck = None
         self.__red_cemitery = CardDeck()
         self.__red_side: tuple[CardCell, CardCell, CardCell, CardCell,
                                CardCell, CardCell, CardCell] = (CardCell() for _ in range(7))
         self.__blue_aegis = HeroesAegis(1000, 100, GameSide.BLUE)
-        self.__blue_deck = blue_deck
+        self.__blue_deck = None
         self.__blue_cemitery = CardDeck()
         self.__blue_side: tuple[CardCell, CardCell, CardCell, CardCell,
                                 CardCell, CardCell, CardCell] = (CardCell() for _ in range(7))
         self.__turrets: tuple[CardCell, CardCell, CardCell,
                               CardCell] = (CardCell() for _ in range(4))
+
+    @property
+    def blue(self) -> HeroesAegis:
+        return self.__blue_aegis
+
+    @property
+    def red(self) -> HeroesAegis:
+        return self.__red_aegis
+
+    @property
+    def defeated(self) -> Optional[GameSide]:
+        if self.__red_aegis.current_health <= 0 and self.__red_aegis.essences < 2:
+            return GameSide.RED
+        elif self.__blue_aegis.current_health <= 0 and self.__blue_aegis.essences < 2:
+            return GameSide.BLUE
+        return None
+
+    def setup(self, red_deck: CardDeck, blue_deck: CardDeck) -> None:
+        self.__red_deck = red_deck
+        self.__blue_deck = blue_deck
 
     def place_card_on_blue_side(self, card: Card, position: int) -> None:
         if card.is_turret() is True:

@@ -1,4 +1,6 @@
 from typing import Callable, Any
+from src.logic.card_deck import CardDeck
+from src.logic.game_state import GameState
 
 
 class EngineBuilder:
@@ -9,6 +11,11 @@ class EngineBuilder:
         self.factories: dict[str, Callable[..., Any]] = {}
         self.scenes: dict[str, Callable[..., Any]] = {}
         self.initial_scene: str | None = None
+        self.game_state = None
+
+    def init_game(self):
+        self.game_state = GameState()
+        return self
 
     def set_window(self, width: int, height: int, title: str) -> EngineBuilder:
         self.window = {"width": width, "height": height, "title": title}
