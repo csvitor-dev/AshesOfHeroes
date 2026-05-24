@@ -2,13 +2,17 @@ from typing import Any
 from lib.events import Events
 from src.core.scene import Scene, SceneManager
 from src.core.event import EventManager
-from mechanics.match_logic import MatchLogic
+from src.mechanics.match_logic import MatchLogic
 from src.graphics.objects.view_board import ViewBoard
 from src.core.animation import AnimationQueue
 
 
-class BattleFieldScene(Scene):
-    def __init__(self, event_manager: EventManager, scene_manager: SceneManager):
+class BattlegroundScene(Scene):
+    def __init__(
+        self,
+        event_manager: EventManager,
+        scene_manager: SceneManager
+    ):
         super().__init__(event_manager, scene_manager)
 
         self.__animation_queue = AnimationQueue()
