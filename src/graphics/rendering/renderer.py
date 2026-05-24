@@ -4,8 +4,8 @@ import numpy as np
 from OpenGL.GL import *
 from OpenGL.GL import shaders as gls
 from pyglm import glm
+from utils.filesystem import read_vertex_shader, read_fragment_shader
 from src.graphics.vertex import VertexLayout
-from src.utils.filesystem import read_vertex_shader, read_fragment_shader
 
 
 @dataclass

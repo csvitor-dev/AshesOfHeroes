@@ -1,7 +1,7 @@
 from typing import Any, Callable
 from collections import deque
 from lib.events import Events
-from src.utils.patterns import Singleton
+from utils.patterns import Singleton
 
 
 class EventManager(metaclass=Singleton):

@@ -3,9 +3,9 @@ import numpy as np
 import freetype
 from pyglm import glm
 from OpenGL.GL import *
+from utils.filesystem import get_asset_path
 from src.graphics.rendering.renderer import Renderer
 from src.graphics.vertex import VertexLayout, VertexAttribute
-from src.utils.filesystem import get_asset_path
 
 
 _LAYOUT = VertexLayout([
