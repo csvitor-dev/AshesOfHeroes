@@ -60,6 +60,18 @@ class SceneManager:
         while self.__stack:
             self.__stack.pop().on_exit()
 
+    def on_key(self, key: int, action: int, mods: int) -> None:
+        if self.__stack:
+            self.__stack[-1].on_key(key, action, mods)
+
+    def on_mouse_move(self, mx: float, my: float) -> None:
+        if self.__stack:
+            self.__stack[-1].on_mouse_move(mx, my)
+
+    def on_mouse_click(self, button: int, mx: float, my: float) -> None:
+        if self.__stack:
+            self.__stack[-1].on_mouse_click(button, mx, my)
+
     @property
     def current(self) -> Scene | None:
         return self.__stack[-1] if self.__stack else None
@@ -84,16 +96,19 @@ class Scene(ABC):
     def on_resume(self) -> None: ...
 
     @abstractmethod
-    def on_key(self, key: int, action: int) -> None: ...
+    def update(self, dt: float) -> None: ...
 
     @abstractmethod
-    def on_mouse_click(self, mx: float, my: float) -> None: ...
+    def render(self) -> None: ...
+
+    @abstractmethod
+    def handle_input(self) -> None: ...
+
+    @abstractmethod
+    def on_key(self, key: int, action: int, mods: int) -> None: ...
 
     @abstractmethod
     def on_mouse_move(self, mx: float, my: float) -> None: ...
 
     @abstractmethod
-    def update(self, dt: float) -> None: ...
-
-    @abstractmethod
-    def render(self) -> None: ...
+    def on_mouse_click(self, button: int, mx: float, my: float) -> None: ...

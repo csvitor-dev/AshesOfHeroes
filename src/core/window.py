@@ -1,10 +1,11 @@
 import glfw
 from OpenGL.GL import *
+from typing import Any, Callable
 from lib.events import Events
 from src.core.event import EventManager
 
 
-def framebuffer_size_callback(window, width, height):
+def framebuffer_size_callback(window: Any, width: float, height: float):
     glViewport(0, 0, width, height)
 
 
@@ -73,11 +74,23 @@ class Window:
             self.__events.emit(Events.RAW_INPUT_MOUSE,
                                button=button, x=x, y=y)
 
+    def set_key_callback(self, fn: Callable[..., Any]) -> None:
+        glfw.set_key_callback(self.__handle, fn)
+
+    def set_cursor_pos_callback(self, fn: Callable[..., Any]) -> None:
+        glfw.set_cursor_pos_callback(self.__handle, fn)
+
+    def set_mouse_button_callback(self, fn: Callable[..., Any]) -> None:
+        glfw.set_mouse_button_callback(self.__handle, fn)
+
     def poll_events(self):
         glfw.poll_events()
 
     def should_close(self):
         return glfw.window_should_close(self.__handle)
+
+    def close_window(self):
+        glfw.set_window_should_close(self.__handle, GL_TRUE)
 
     def swap_buffers(self):
         glfw.swap_buffers(self.__handle)

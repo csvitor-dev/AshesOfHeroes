@@ -2,10 +2,13 @@ import glfw
 from OpenGL.GL import *
 import time
 from typing import Any
+from lib.events import Events
 from src.core.event import EventManager
+from src.core.input import Input
 from src.core.scene import SceneManager
 from src.core.window import Window
 from src.graphics.camera import Camera
+from src.core.scenes.battleground_scene import BattlegroundScene
 
 
 class Engine:
@@ -25,8 +28,29 @@ class Engine:
         self.__camera = camera
         self.__services = services
 
+        self.__events.subscribe(Events.ACTION_EXIT_GAME,
+                                lambda _: self.__window.close_window())
+
         self.__is_running = True
         self.__last_frame_time = time.time()
+
+        self.__input = Input(window)
+        self.__input.bind(
+            on_key=self.__on_key,
+            on_mouse_move=self.__scenes.on_mouse_move,
+            on_mouse_click=self.__on_mouse_click,
+        )
+
+    def __on_key(self, key: int, action: int, mods: int) -> None:
+        if action == glfw.PRESS and key == glfw.KEY_ENTER:
+            if isinstance(self.__scenes.current, BattlegroundScene):
+                self.__camera.rotate_perspective()
+                return
+        self.__scenes.on_key(key, action, mods)
+
+    def __on_mouse_click(self, button: int, mx: float, my: float) -> None:
+        if button == glfw.MOUSE_BUTTON_LEFT:
+            self.__scenes.on_mouse_click(button, mx, my)
 
     def run(self) -> None:
         while self.__is_running and not self.__window.should_close():
