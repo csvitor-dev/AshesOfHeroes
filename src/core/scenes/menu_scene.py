@@ -6,6 +6,7 @@ from src.core.scene import Scene, SceneManager
 from src.graphics.rendering.renderer import Renderer
 from src.graphics.rendering.menu_renderer import MenuRenderer
 from src.graphics.camera import Camera
+from lib.events import Events
 
 
 class MenuScene(Scene):
@@ -48,15 +49,19 @@ class MenuScene(Scene):
 
     def handle_input(self) -> None: ...
 
-    def on_key(self, key: int, action: int) -> None:
+    def on_key(self, key: int, action: int, mods: int) -> None:
         if action != glfw.PRESS:
             return
         if key in (glfw.KEY_ENTER, glfw.KEY_SPACE):
             self._go_battle()
-        if key == glfw.KEY_ESCAPE:
+        elif key == glfw.KEY_ESCAPE:
             self._exit_game()
 
-    def on_mouse_click(self, mx: float, my: float) -> None:
+    def on_mouse_move(self, mx: float, my: float) -> None:
+        if self._menu:
+            self._menu.set_hover(mx, my)
+
+    def on_mouse_click(self, button: int, mx: float, my: float) -> None:
         if not self._menu:
             return
         hit = self._menu.hit_test(mx, my)
@@ -65,12 +70,9 @@ class MenuScene(Scene):
         elif hit == "exit":
             self._exit_game()
 
-    def on_mouse_move(self, mx: float, my: float) -> None:
-        if self._menu:
-            self._menu.set_hover(mx, my)
-
     def _go_battle(self) -> None:
         self._scenes.push_by_key("battle_ground")
 
     def _exit_game(self) -> None:
         self._scenes.clear()
+        self._events.emit(Events.ACTION_EXIT_GAME)

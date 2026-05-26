@@ -1,8 +1,6 @@
 from typing import Any
 from OpenGL.GL import *
-from pyglm import glm
 import glfw
-
 from src.core.event import EventManager
 from src.core.scene import Scene, SceneManager
 from src.core.animation import AnimationQueue
@@ -61,23 +59,21 @@ class BattlegroundScene(Scene):
 
         if self._board:
             self._board.render(
-                proj3d = self._camera.projection(),
-                view   = self._camera.view(),
-                proj2d = self._camera.ortho(),
+                proj3d=self._camera.projection(),
+                view=self._camera.view(),
+                proj2d=self._camera.ortho(),
             )
 
     def handle_input(self) -> None: ...
 
-    def on_key(self, key: int, action: int) -> None:
-        if action != glfw.PRESS:
-            return
-        if key == glfw.KEY_ESCAPE:
+    def on_key(self, key: int, action: int, mods: int) -> None:
+        if action == glfw.PRESS and key == glfw.KEY_ESCAPE:
             self._scenes.pop_scene()
 
     def on_mouse_move(self, mx: float, my: float) -> None:
         if self._board:
             self._board.on_mouse_move(mx, my)
 
-    def on_mouse_click(self, mx: float, my: float) -> None:
+    def on_mouse_click(self, button: int, mx: float, my: float) -> None:
         if self._board:
             self._board.on_mouse_click(mx, my)
