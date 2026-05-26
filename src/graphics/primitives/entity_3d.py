@@ -8,7 +8,7 @@ class Entity3D:
     def __init__(self):
         self._vao: int = 0
         self._vbo: int = 0
-        self._ebo: int = 0
+        self._ebo: int | None = 0
         self._index_count: int = 0
 
         self.position = glm.vec3(0.0, 0.0, 0.0)
@@ -46,7 +46,7 @@ class Entity3D:
         glBindVertexArray(0)
 
     def model_matrix(self) -> glm.mat4x4:
-        model = glm.translate(glm.mat4(1.0), self.position) 
+        model = glm.translate(glm.mat4(1.0), self.position)
         model = glm.rotateX(model, glm.radians(
             self.rotation.x)) if self.rotation.x != 0.0 else model
         model = glm.rotateY(model, glm.radians(
@@ -60,7 +60,8 @@ class Entity3D:
         loc_model = glGetUniformLocation(shader_program, "model")
         loc_color = glGetUniformLocation(shader_program, "color")
 
-        glUniformMatrix4fv(loc_model, 1, GL_FALSE, glm.value_ptr(self.model_matrix()))
+        glUniformMatrix4fv(loc_model, 1, GL_FALSE,
+                           glm.value_ptr(self.model_matrix()))
         glUniform4fv(loc_color, 1, glm.value_ptr(self.color))
 
         glBindVertexArray(self._vao)
@@ -69,4 +70,9 @@ class Entity3D:
 
     def delete(self):
         glDeleteVertexArrays(1, [self._vao])
-        glDeleteBuffers(1, [self._vbo, self._ebo])
+        self._vao = 0
+
+        glDeleteBuffers(
+            1, [buf for buf in (self._ebo, self._vbo) if buf is not None])
+        self._ebo = 0
+        self._vbo = 0
