@@ -7,12 +7,12 @@ class Camera:
 
     _PERSPECTIVES: dict[GameSide, dict[str, glm.vec3]] = {
         GameSide.BLUE: {
-            "eye":    glm.vec3(0.0, -6.0, 5.0),
+            "eye":    glm.vec3(0.0, -10.0, 10.0),
             "center": glm.vec3(0.0,  0.5, 0.0),
         },
         GameSide.RED: {
-            "eye":    glm.vec3(0.0,  6.0, 5.0),
-            "center": glm.vec3(0.0, -0.5, 0.0),
+            "eye":    glm.vec3(0.0, -10.0, 10.0),
+            "center": glm.vec3(0.0, 0.5, 0.0),
         },
     }
 
@@ -22,7 +22,7 @@ class Camera:
         self,
         width: int = 1280,
         height: int = 720,
-        fov: float = 45.0,
+        fov: float = 30.0,
         near: float = 0.1,
         far: float = 100.0
     ):
