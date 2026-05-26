@@ -13,6 +13,7 @@ from src.graphics.texture_manager import TextureManager
 from src.graphics.objects.view_card import ViewCard
 from lib.events import Events
 
+
 _BORDER = {
     SlotOwner.PLAYER:   glm.vec4(0.30, 0.50, 1.00, 0.85),
     SlotOwner.OPPONENT: glm.vec4(1.00, 0.30, 0.30, 0.85),
@@ -21,6 +22,38 @@ _BORDER = {
 
 _BORDER_HOVER = glm.vec4(1.00, 1.00, 0.40, 1.00)
 _BORDER_SELECTED = glm.vec4(1.00, 0.85, 0.10, 1.00)
+_LAYOUT_BOARD = VertexLayout([
+    VertexAttribute("position", GL_FLOAT, 3),
+    VertexAttribute("color",    GL_FLOAT, 3),
+])
+_LAYOUT_SLOT = VertexLayout([
+    VertexAttribute("position", GL_FLOAT, 2),
+])
+
+
+def _build_board_vertices(size: float = 10.0) -> np.ndarray:
+    s = size / 2
+    fc = [0.94, 0.75, 0.34]
+    lc = [0.00, 1.00, 0.00]
+    z_line = 0.01
+
+    return np.array([
+
+        -s, -s, 0.0, *fc,
+        s, -s, 0.0, *fc,
+        s,  s, 0.0, *fc,
+        s,  s, 0.0, *fc,
+        -s,  s, 0.0, *fc,
+        -s, -s, 0.0, *fc,
+
+
+        -s, -0.10, z_line, *lc,
+        s, -0.10, z_line, *lc,
+        s,  0.10, z_line, *lc,
+        -s, -0.10, z_line, *lc,
+        s,  0.10, z_line, *lc,
+        -s,  0.10, z_line, *lc,
+    ], dtype=np.float32)
 
 
 class ViewBoard:
@@ -29,51 +62,55 @@ class ViewBoard:
         event_manager:   EventManager,
         animation_queue: AnimationQueue,
         renderer:        Renderer,
-        textures:        TextureManager
+        textures:        TextureManager,
     ):
         self.events = event_manager
         self.animation_queue = animation_queue
         self.renderer = renderer
         self.textures = textures
-
         self.layout = BoardLayout()
 
         self._hovered_slot:  SlotRect | None = None
         self._selected_slot: SlotRect | None = None
+        self.view_cards:     dict[Any, ViewCard] = {}
 
-        self.view_cards: dict[Any, ViewCard] = {}
-
-        self.events.subscribe(
-            Events.LOGIC_COMBAT_RESOLVED, self._on_combat_resolved)
+        self.events.subscribe(Events.LOGIC_COMBAT_RESOLVED,
+                              self._on_combat_resolved)
         self.events.subscribe(Events.CARD_PLACED,
                               self._on_card_placed)
         self.events.subscribe(Events.CARD_REMOVED,
                               self._on_card_removed)
 
     def load_assets(self) -> None:
+        self.renderer.load_program("objects", "board")
+        self._upload_board_mesh()
         self._upload_slot_borders()
 
     def unload_assets(self) -> None:
         for view_card in self.view_cards.values():
             view_card.delete()
         self.view_cards.clear()
-        self.renderer.delete("scenes_battleground")
+        self.renderer.delete("board_mesh")
+        self.renderer.delete("slot_borders")
 
-    def _upload_slot_borders(self):
-        layout = VertexLayout([VertexAttribute("position", GL_FLOAT, 2)])
+    def _upload_board_mesh(self) -> None:
+        self.renderer.upload(
+            "board_mesh",
+            _build_board_vertices(size=10.0),
+            _LAYOUT_BOARD,
+        )
+
+    def _upload_slot_borders(self) -> None:
         slots = self.layout.all_slots()
-
         verts = np.concatenate([
             self._slot_border_verts(s) for s in slots
         ], dtype=np.float32)
-
-        self.renderer.upload(
-            "slot_borders", verts, layout, usage=GL_STATIC_DRAW
-        )
+        self.renderer.upload("slot_borders", verts,
+                             _LAYOUT_SLOT, usage=GL_STATIC_DRAW)
         self._slot_list = slots
 
     @staticmethod
-    def _slot_border_verts(slot: SlotRect):
+    def _slot_border_verts(slot: SlotRect) -> np.ndarray:
         x0 = slot.position.x + 1
         y0 = slot.position.y + 1
         x1 = slot.position.x + slot.size.x - 1
@@ -83,7 +120,6 @@ class ViewBoard:
     def _on_combat_resolved(self, data: Any) -> None:
         attacker_vis = self.view_cards.get(data["attacker_id"])
         target_vis = self.view_cards.get(data["target_id"])
-
         if attacker_vis and target_vis:
             self.animation_queue.enqueue(
                 CardAnimation(attacker_vis, target_vis.position)
@@ -93,20 +129,14 @@ class ViewBoard:
         card_id = data["card_id"]
         slot_key = data["slot_key"]
         texture = data.get("texture", "assets/cards/default.png")
-
         slot = self.layout.get(slot_key)
         if slot is None:
             return
-
-        target_pos = slot.position
-
         if card_id in self.view_cards:
-            self.view_cards[card_id].move_to(target_pos)
+            self.view_cards[card_id].move_to(slot.position)
         else:
-            start_pos = glm.vec2(
-                BoardLayout.SCREEN_W / 2,
-                BoardLayout.SCREEN_H + 60,
-            )
+            start_pos = glm.vec2(BoardLayout.SCREEN_W / 2,
+                                 BoardLayout.SCREEN_H + 60)
             vis = ViewCard(
                 card_id=card_id,
                 texture_path=texture,
@@ -114,13 +144,12 @@ class ViewBoard:
                 textures=self.textures,
                 position=start_pos,
             )
-            vis.move_to(target_pos)
+            vis.move_to(slot.position)
             self.view_cards[card_id] = vis
             self.textures.load(texture)
 
     def _on_card_removed(self, data: Any) -> None:
-        card_id = data["card_id"]
-        vis = self.view_cards.pop(card_id, None)
+        vis = self.view_cards.pop(data["card_id"], None)
         if vis:
             vis.delete()
 
@@ -138,25 +167,43 @@ class ViewBoard:
         for view_card in self.view_cards.values():
             view_card.update_lerp(dt)
 
-    def render(self, projection: glm.mat4x4) -> None:
-        self._render_slots(projection)
-        self._render_cards(projection)
+    def render(self, proj3d: glm.mat4, view: glm.mat4, proj2d: glm.mat4) -> None:
+        self._render_board_mesh(proj3d, view)
+        self._render_slots(proj2d)
+        self._render_cards(proj2d)
 
-    def _render_slots(self, projection: glm.mat4x4):
+    def _render_board_mesh(self, proj: glm.mat4, view: glm.mat4) -> None:
+        glEnable(GL_DEPTH_TEST)
+
+        prog = self.renderer.use("objects_board")
+
+        glUniformMatrix4fv(glGetUniformLocation(prog, "projection"),
+                           1, GL_FALSE, glm.value_ptr(proj))
+        glUniformMatrix4fv(glGetUniformLocation(prog, "camera"),
+                           1, GL_FALSE, glm.value_ptr(view))
+        glUniformMatrix4fv(glGetUniformLocation(prog, "model"),
+                           1, GL_FALSE, glm.value_ptr(glm.mat4(1.0)))
+        glUniform1f(glGetUniformLocation(prog, "alpha"), 1.0)
+
+        self.renderer.draw("board_mesh")
+
+        glDisable(GL_DEPTH_TEST)
+
+    def _render_slots(self, proj: glm.mat4) -> None:
         prog = self.renderer.use("scenes_battleground")
-        self.renderer.uniform_mat4(
-            "scenes_battleground", "projection", projection)
 
-        glBindVertexArray(
-            self.renderer.get_vao_id_by_key("slot_borders"))
+        glUniformMatrix4fv(glGetUniformLocation(prog, "projection"),
+                           1, GL_FALSE, glm.value_ptr(proj))
+
+        glBindVertexArray(self.renderer.get_vao_id_by_key("slot_borders"))
 
         for i, slot in enumerate(self._slot_list):
             color = self._border_color(slot)
-
-            loc = glGetUniformLocation(prog, "color")
-            glUniform4f(loc, color.x, color.y, color.z, color.w)
-
+            glUniform4f(glGetUniformLocation(prog, "color"),
+                        color.x, color.y, color.z, color.w)
+            glUniform1f(glGetUniformLocation(prog, "alpha"), color.w)
             glDrawArrays(GL_LINE_LOOP, i * 4, 4)
+
         glBindVertexArray(0)
 
     def _border_color(self, slot: SlotRect) -> glm.vec4:
@@ -166,9 +213,18 @@ class ViewBoard:
             return _BORDER_HOVER
         return _BORDER.get(slot.key.owner, glm.vec4(0.6, 0.6, 0.6, 0.7))
 
-    def _render_cards(self, projection: glm.mat4x4):
+    def _render_cards(self, proj: glm.mat4) -> None:
         glEnable(GL_BLEND)
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
 
         for view_card in self.view_cards.values():
-            view_card.draw("objects_card", projection)
+            view_card.draw("objects_card", proj)
+            self.renderer.use("scenes_battleground")
+
+    def __del__(self):
+        self.events.unsubscribe(
+            Events.LOGIC_COMBAT_RESOLVED, self._on_combat_resolved)
+        self.events.unsubscribe(Events.CARD_PLACED,
+                                self._on_card_placed)
+        self.events.unsubscribe(Events.CARD_REMOVED,
+                                self._on_card_removed)

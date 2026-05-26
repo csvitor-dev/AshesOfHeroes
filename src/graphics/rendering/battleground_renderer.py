@@ -32,7 +32,7 @@ class BattlegroundRenderer:
 
     def load_assets(self) -> None:
         self._renderer.load_program("scenes", "battleground")
-        self._renderer.load_program("objects", "card")
+
         self._view_aegis.load_assets()
         self._view_board.load_assets()
         self._view_hud.load_assets()
@@ -48,22 +48,22 @@ class BattlegroundRenderer:
         self._view_board.update(dt)
         self._view_hand.update(dt)
 
-    def render(self, proj3d: glm.mat4, proj2d: glm.mat4) -> None:
-        self._render_3d(proj3d)
-        self._render_2d(proj2d)
+    def render(self, proj3d: glm.mat4, view: glm.mat4, proj2d: glm.mat4) -> None:
+        self._render_2d(proj3d, view, proj2d)
         self._render_hud(proj2d)
+        self._render_3d(proj3d, view)
 
-    def _render_3d(self, proj: glm.mat4) -> None:
+    def _render_3d(self, proj: glm.mat4, view: glm.mat4) -> None:
         glEnable(GL_DEPTH_TEST)
         glDepthFunc(GL_LESS)
-        self._view_aegis.render(proj)
+        self._view_aegis.render(proj, view)
 
-    def _render_2d(self, proj: glm.mat4) -> None:
+    def _render_2d(self, proj3d: glm.mat4, view: glm.mat4, proj2d: glm.mat4) -> None:
         glDisable(GL_DEPTH_TEST)
         glEnable(GL_BLEND)
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
-        self._view_board.render(proj)
-        self._view_hand.render(proj, self._game_state)
+        self._view_board.render(proj3d, view, proj2d)
+        self._view_hand.render(proj2d, self._game_state)
 
     def _render_hud(self, proj: glm.mat4) -> None:
         self._view_hud.render(proj, self._game_state)

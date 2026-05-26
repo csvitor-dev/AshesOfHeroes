@@ -61,8 +61,9 @@ class BattlegroundScene(Scene):
 
         if self._board:
             self._board.render(
-                proj3d=glm.mul(self._camera.projection(), self._camera.view()),
-                proj2d=self._camera.ortho(),
+                proj3d = self._camera.projection(),
+                view   = self._camera.view(),
+                proj2d = self._camera.ortho(),
             )
 
     def handle_input(self) -> None: ...
