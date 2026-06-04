@@ -13,11 +13,11 @@ class ViewAegis:
     def load_assets(self) -> None:
         self._renderer.load_program("objects", "aegis")
         self._build_aegis(
-            pos=glm.vec3(0.0, 1.5, 0.0),
+            pos=glm.vec3(0.0, 4.7, 0.0),
             color_body=(0.90, 0.30, 0.30),
         )
         self._build_aegis(
-            pos=glm.vec3(0.0, -1.5, 0.0),
+            pos=glm.vec3(0.0, -4.7, 0.0),
             color_body=(0.30, 0.50, 1.00),
         )
 
