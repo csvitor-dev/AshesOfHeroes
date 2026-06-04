@@ -1,94 +1,104 @@
 from pyglm import glm
-from src.graphics.slots import SlotKey, SlotRect, SlotKind, SlotOwner
+from src.graphics.slots import BattleSlot, SlotKey
+from lib.types import SlotOwner, SlotKind
+
+
+SLOT_W = 1.1
+SLOT_D = 1.5
+SLOT_GAP = 0.05
+SLOT_SPREAD = 0.8
+COLS = 7
+
+_COL_STEP = SLOT_W + SLOT_GAP
+_ROW_STEP = SLOT_D + SLOT_GAP
+
+_OPP_ROW_START_Y = 0.5
+_PL_ROW_START_Y = -0.5
+_COL_START_X = -(COLS * _COL_STEP) / 2 + _COL_STEP / 2
+
+_NEUTRAL_COLS = [2, 4]
+_NEUTRAL_OPP_Y = _OPP_ROW_START_Y + _ROW_STEP * 2
+_NEUTRAL_PL_Y = _PL_ROW_START_Y - _ROW_STEP * 2
 
 
 class BoardLayout:
-
-    SCREEN_W = 1280
-    SCREEN_H = 720
-
-    BATTLE_SZ = glm.vec2(80, 80)
-    STAGING_SZ = glm.vec2(90, 120)
-    INVENTORY_SZ = glm.vec2(90, 90)
-    DECK_SZ = glm.vec2(100, 140)
-
-    BATTLE_COLS = 7
-    BATTLE_ORIGIN_X = 230
-    BATTLE_COL_STEP = 88
-
     def __init__(self):
-        self._slots: dict[SlotKey, SlotRect] = {}
+        self._slots: dict[SlotKey, BattleSlot] = {}
+        self._build()
 
-        self._build_battle()
-        self._build_neutral()
-        self._build_staging()
-        self._build_inventory()
-        self._build_decks()
+    def _build(self) -> None:
+        size = glm.vec2(SLOT_W, SLOT_D)
 
-    def _build_battle(self):
-        for row in range(2):
-            for col in range(self.BATTLE_COLS):
-                key = SlotKey(SlotKind.BATTLE, SlotOwner.OPPONENT, row, col)
-                pos = glm.vec2(
-                    self.BATTLE_ORIGIN_X + col * self.BATTLE_COL_STEP,
-                    160 + row * 88,
-                )
-                self._slots[key] = SlotRect(key, pos, glm.vec2(self.BATTLE_SZ))
+        for col in range(COLS):
+            x = _COL_START_X + col * _COL_STEP
+            y = _OPP_ROW_START_Y + _ROW_STEP
+            y -= SLOT_SPREAD if col % 2 == 0 else 0
 
-        for row in range(2):
-            for col in range(self.BATTLE_COLS):
-                key = SlotKey(SlotKind.BATTLE, SlotOwner.PLAYER, row, col)
-                pos = glm.vec2(
-                    self.BATTLE_ORIGIN_X + col * self.BATTLE_COL_STEP,
-                    410 + row * 88,
-                )
-                self._slots[key] = SlotRect(key, pos, glm.vec2(self.BATTLE_SZ))
+            key = SlotKey(SlotKind.BATTLE, SlotOwner.OPPONENT, 1, col)
+            self._slots[key] = BattleSlot(
+                key=key,
+                center=glm.vec3(x, y, 0.0),
+                size=size,
+            )
 
-    def _build_neutral(self):
-        positions = [
-            glm.vec2(370, 160), glm.vec2(540, 160),
-            glm.vec2(370, 590), glm.vec2(540, 590),
-        ]
-        for i, pos in enumerate(positions):
-            key = SlotKey(SlotKind.BATTLE, SlotOwner.NEUTRAL, col=i)
-            self._slots[key] = SlotRect(key, pos, glm.vec2(self.BATTLE_SZ))
+        for col in range(COLS):
+            x = _COL_START_X + col * _COL_STEP
+            y = _PL_ROW_START_Y - _ROW_STEP
+            y += SLOT_SPREAD if col % 2 == 0 else 0
 
-    def _build_staging(self):
-        for i in range(6):
-            for owner in (SlotOwner.OPPONENT, SlotOwner.PLAYER):
-                key = SlotKey(SlotKind.STAGING, owner, col=i)
-                pos = glm.vec2(1050, 90 + i * 110)
-                self._slots[key] = SlotRect(
-                    key, pos, glm.vec2(self.STAGING_SZ))
+            key = SlotKey(SlotKind.BATTLE, SlotOwner.PLAYER, 1, col)
+            self._slots[key] = BattleSlot(
+                key=key,
+                center=glm.vec3(x, y, 0.0),
+                size=size,
+            )
 
-    def _build_inventory(self):
-        for i in range(5):
-            key = SlotKey(SlotKind.INVENTORY, SlotOwner.PLAYER, col=i)
-            pos = glm.vec2(280 + i * 100, 810)
-            self._slots[key] = SlotRect(key, pos, glm.vec2(self.INVENTORY_SZ))
+        for i, col in enumerate(_NEUTRAL_COLS):
+            x = _COL_START_X + col * _COL_STEP
 
-    def _build_decks(self):
-        configs = [
-            (SlotOwner.OPPONENT, 0, glm.vec2(50,  165)),
-            (SlotOwner.PLAYER,   0, glm.vec2(50,  455)),
-            (SlotOwner.OPPONENT, 1, glm.vec2(1130, 165)),
-            (SlotOwner.PLAYER,   1, glm.vec2(1130, 455)),
-        ]
-        for owner, col, pos in configs:
-            key = SlotKey(SlotKind.DECK, owner, col=col)
-            self._slots[key] = SlotRect(key, pos, glm.vec2(self.DECK_SZ))
+            opp_key = SlotKey(
+                SlotKind.BATTLE, SlotOwner.OPPONENT, row=0, col=i)
+            self._slots[opp_key] = BattleSlot(
+                key=opp_key,
+                center=glm.vec3(x, _NEUTRAL_OPP_Y, 0.0),
+                size=size,
+            )
 
-    def get(self, key: SlotKey) -> SlotRect | None:
+            pl_key = SlotKey(SlotKind.BATTLE, SlotOwner.PLAYER, row=0, col=i)
+            self._slots[pl_key] = BattleSlot(
+                key=pl_key,
+                center=glm.vec3(x, _NEUTRAL_PL_Y, 0.0),
+                size=size,
+            )
+
+    def get(self, key: SlotKey) -> BattleSlot | None:
         return self._slots.get(key)
 
-    def all_slots(self) -> list[SlotRect]:
+    def all_slots(self) -> list[BattleSlot]:
         return list(self._slots.values())
 
-    def slots_of_kind(self, kind: SlotKind) -> list[SlotRect]:
-        return [s for s in self._slots.values() if s.key.kind == kind]
+    def ray_hit(self, ray_origin: glm.vec3, ray_dir: glm.vec3) -> BattleSlot | None:
+        best:   BattleSlot | None = None
+        best_t: float = float("inf")
 
-    def slot_at(self, mx: float, my: float) -> SlotRect | None:
         for slot in self._slots.values():
-            if slot.contains(mx, my):
-                return slot
+            t = _ray_plane_intersect(ray_origin, ray_dir, slot.center.z)
+            if t is None or t < 0:
+                continue
+            hit = ray_origin + ray_dir * t
+            hw = slot.size.x / 2
+            hd = slot.size.y / 2
+            if (abs(hit.x - slot.center.x) <= hw and
+                    abs(hit.y - slot.center.y) <= hd and t < best_t):
+                best = slot
+                best_t = t
+
+        return best
+
+
+def _ray_plane_intersect(
+    origin: glm.vec3, direction: glm.vec3, z: float
+) -> float | None:
+    if abs(direction.z) < 1e-6:
         return None
+    return (z - origin.z) / direction.z

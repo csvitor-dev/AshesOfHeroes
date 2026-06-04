@@ -1,3 +1,5 @@
+from __future__ import annotations
+from enum import Enum, auto
 from dataclasses import dataclass
 from typing import Optional
 import numpy as np
@@ -65,17 +67,36 @@ class Slot:
 
 
 @dataclass
-class BattleSlot(Slot):
-    row: int = 0
-    col: int = 0
+class BattleSlot:
+    key:      SlotKey
+    center:   glm.vec3
+    size:     glm.vec2
+    hovered:  bool = False
+    selected: bool = False
 
-    def _default_border(self):
-        if self.owner == SlotOwner.PLAYER:
-            return (0.3, 0.5, 1.0, 0.8)
-        if self.owner == SlotOwner.OPPONENT:
-            return (1.0, 0.3, 0.3, 0.8)
+    def world_verts(self) -> np.ndarray:
+        hw = self.size.x / 2
+        hd = self.size.y / 2
+        z = self.center.z + 0.01
+        x, y = self.center.x, self.center.y
+        return np.array([
+            x - hw, y - hd, z,
+            x + hw, y - hd, z,
+            x + hw, y + hd, z,
+            x - hw, y + hd, z,
+        ], dtype=np.float32)
 
-        return (0.4, 0.8, 0.4, 0.8)
+    def border_verts(self) -> np.ndarray:
+        hw = self.size.x / 2 - 0.01
+        hd = self.size.y / 2 - 0.01
+        z = self.center.z + 0.02
+        x, y = self.center.x, self.center.y
+        return np.array([
+            x - hw, y - hd, z,
+            x + hw, y - hd, z,
+            x + hw, y + hd, z,
+            x - hw, y + hd, z,
+        ], dtype=np.float32)
 
 
 @dataclass

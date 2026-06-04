@@ -21,6 +21,9 @@ class BattlegroundRenderer:
         textures: TextureManager,
         game_state:      GameState,
     ):
+        self.__proj3d: glm.mat4 = glm.mat4(1.0)
+        self.__view: glm.mat4 = glm.mat4(1.0)
+
         self._renderer = renderer
         self._game_state = game_state
 
@@ -49,29 +52,43 @@ class BattlegroundRenderer:
         self._view_hand.update(dt)
 
     def render(self, proj3d: glm.mat4, view: glm.mat4, proj2d: glm.mat4) -> None:
-        self._render_2d(proj3d, view, proj2d)
-        self._render_hud(proj2d)
+        self.__proj3d = proj3d
+        self.__view = view
+
         self._render_3d(proj3d, view)
+        self._render_2d(proj2d)
+        self._render_hud(proj2d)
 
     def _render_3d(self, proj: glm.mat4, view: glm.mat4) -> None:
         glEnable(GL_DEPTH_TEST)
         glDepthFunc(GL_LESS)
         self._view_aegis.render(proj, view)
+        self._view_board.render(proj, view)
 
-    def _render_2d(self, proj3d: glm.mat4, view: glm.mat4, proj2d: glm.mat4) -> None:
+    def _render_2d(self, proj: glm.mat4) -> None:
         glDisable(GL_DEPTH_TEST)
         glEnable(GL_BLEND)
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
-        self._view_board.render(proj3d, view, proj2d)
-        self._view_hand.render(proj2d, self._game_state)
 
     def _render_hud(self, proj: glm.mat4) -> None:
         self._view_hud.render(proj, self._game_state)
 
     def on_mouse_move(self, mx: float, my: float) -> None:
-        self._view_board.on_mouse_move(mx, my)
+        if self.__proj3d and self.__view:
+            self._view_board.on_mouse_move(
+                mx, my,
+                proj     = self.__proj3d,
+                view     = self.__view,
+                viewport = (0, 0, 1280, 720),
+            )
         self._view_hand.on_mouse_move(mx, my)
 
     def on_mouse_click(self, mx: float, my: float) -> None:
-        self._view_board.on_mouse_click(mx, my)
+        if self.__proj3d and self.__view:
+            self._view_board.on_mouse_click(
+                mx, my,
+                proj     = self.__proj3d,
+                view     = self.__view,
+                viewport = (0, 0, 1280, 720),
+            )
         self._view_hand.on_mouse_click(mx, my)

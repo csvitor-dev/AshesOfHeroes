@@ -1,17 +1,19 @@
 import numpy as np
+from typing import Any
 from pyglm import glm
 from OpenGL.GL import *
-from typing import Any
+
 from src.core.animation import AnimationQueue
 from src.core.event import EventManager
 from src.core.animations.card_animation import CardAnimation
-from src.graphics.slots import SlotRect, SlotOwner
+from src.graphics.slots import BattleSlot
 from src.graphics.layouts.board_layout import BoardLayout
 from src.graphics.rendering.renderer import Renderer
 from src.graphics.vertex import VertexLayout, VertexAttribute
 from src.graphics.texture_manager import TextureManager
 from src.graphics.objects.view_card import ViewCard
 from lib.events import Events
+from lib.types import SlotOwner
 
 
 _BORDER = {
@@ -19,41 +21,10 @@ _BORDER = {
     SlotOwner.OPPONENT: glm.vec4(1.00, 0.30, 0.30, 0.85),
     SlotOwner.NEUTRAL:  glm.vec4(0.30, 0.80, 0.40, 0.85),
 }
-
 _BORDER_HOVER = glm.vec4(1.00, 1.00, 0.40, 1.00)
 _BORDER_SELECTED = glm.vec4(1.00, 0.85, 0.10, 1.00)
-_LAYOUT_BOARD = VertexLayout([
-    VertexAttribute("position", GL_FLOAT, 3),
-    VertexAttribute("color",    GL_FLOAT, 3),
-])
-_LAYOUT_SLOT = VertexLayout([
-    VertexAttribute("position", GL_FLOAT, 2),
-])
 
-
-def _build_board_vertices(size: float = 10.0) -> np.ndarray:
-    s = size / 2
-    fc = [0.94, 0.75, 0.34]
-    lc = [0.00, 1.00, 0.00]
-    z_line = 0.01
-
-    return np.array([
-
-        -s, -s, 0.0, *fc,
-        s, -s, 0.0, *fc,
-        s,  s, 0.0, *fc,
-        s,  s, 0.0, *fc,
-        -s,  s, 0.0, *fc,
-        -s, -s, 0.0, *fc,
-
-
-        -s, -0.10, z_line, *lc,
-        s, -0.10, z_line, *lc,
-        s,  0.10, z_line, *lc,
-        -s, -0.10, z_line, *lc,
-        s,  0.10, z_line, *lc,
-        -s,  0.10, z_line, *lc,
-    ], dtype=np.float32)
+_LAYOUT_3D = VertexLayout([VertexAttribute("position", GL_FLOAT, 3)])
 
 
 class ViewBoard:
@@ -70,8 +41,8 @@ class ViewBoard:
         self.textures = textures
         self.layout = BoardLayout()
 
-        self._hovered_slot:  SlotRect | None = None
-        self._selected_slot: SlotRect | None = None
+        self._hovered_slot:  BattleSlot | None = None
+        self._selected_slot: BattleSlot | None = None
         self.view_cards:     dict[Any, ViewCard] = {}
 
         self.events.subscribe(Events.LOGIC_COMBAT_RESOLVED,
@@ -83,47 +54,55 @@ class ViewBoard:
 
     def load_assets(self) -> None:
         self.renderer.load_program("objects", "board")
+        self.renderer.load_program("objects", "slot")
         self._upload_board_mesh()
         self._upload_slot_borders()
 
     def unload_assets(self) -> None:
-        for view_card in self.view_cards.values():
-            view_card.delete()
+        for vc in self.view_cards.values():
+            vc.delete()
         self.view_cards.clear()
         self.renderer.delete("board_mesh")
         self.renderer.delete("slot_borders")
 
     def _upload_board_mesh(self) -> None:
-        self.renderer.upload(
-            "board_mesh",
-            _build_board_vertices(size=10.0),
-            _LAYOUT_BOARD,
-        )
+        from src.graphics.vertex import VertexLayout, VertexAttribute
+        layout = VertexLayout([
+            VertexAttribute("position", GL_FLOAT, 3),
+            VertexAttribute("color",    GL_FLOAT, 3),
+        ])
+        s = 5.0
+        floor_color = [1.00, 0.79, 0.42]
+        line_color = [0.00, 0.00, 0.00]
+        z_axis = 0.0
+        z_line = 0.01
+
+        verts = np.array([
+            -s, -s, z_axis,  *floor_color,   s, -s, z_axis,  *
+            floor_color,   s,  s, z_axis,  *floor_color,
+            s,  s, z_axis,  *floor_color,  -s,  s, z_axis,  *
+            floor_color,  -s, -s, z_axis,  *floor_color,
+            -s, -0.08, z_line, *line_color,   s, -0.08, z_line, *
+            line_color,   s, 0.08, z_line, *line_color,
+            -s, -0.08, z_line, *line_color,   s,  0.08, z_line, *
+            line_color,  -s, 0.08, z_line, *line_color,
+        ], dtype=np.float32)
+
+        self.renderer.upload("board_mesh", verts, layout)
 
     def _upload_slot_borders(self) -> None:
         slots = self.layout.all_slots()
-        verts = np.concatenate([
-            self._slot_border_verts(s) for s in slots
-        ], dtype=np.float32)
+        verts = np.concatenate([slot.border_verts()
+                               for slot in slots], dtype=np.float32)
         self.renderer.upload("slot_borders", verts,
-                             _LAYOUT_SLOT, usage=GL_STATIC_DRAW)
+                             _LAYOUT_3D, usage=GL_STATIC_DRAW)
         self._slot_list = slots
 
-    @staticmethod
-    def _slot_border_verts(slot: SlotRect) -> np.ndarray:
-        x0 = slot.position.x + 1
-        y0 = slot.position.y + 1
-        x1 = slot.position.x + slot.size.x - 1
-        y1 = slot.position.y + slot.size.y - 1
-        return np.array([x0, y0, x1, y0, x1, y1, x0, y1], dtype=np.float32)
-
     def _on_combat_resolved(self, data: Any) -> None:
-        attacker_vis = self.view_cards.get(data["attacker_id"])
-        target_vis = self.view_cards.get(data["target_id"])
-        if attacker_vis and target_vis:
-            self.animation_queue.enqueue(
-                CardAnimation(attacker_vis, target_vis.position)
-            )
+        av = self.view_cards.get(data["attacker_id"])
+        tv = self.view_cards.get(data["target_id"])
+        if av and tv:
+            self.animation_queue.enqueue(CardAnimation(av, tv.position))
 
     def _on_card_placed(self, data: Any) -> None:
         card_id = data["card_id"]
@@ -132,19 +111,18 @@ class ViewBoard:
         slot = self.layout.get(slot_key)
         if slot is None:
             return
+        target = glm.vec2(slot.center.x, slot.center.y)
         if card_id in self.view_cards:
-            self.view_cards[card_id].move_to(slot.position)
+            self.view_cards[card_id].move_to(target)
         else:
-            start_pos = glm.vec2(BoardLayout.SCREEN_W / 2,
-                                 BoardLayout.SCREEN_H + 60)
             vis = ViewCard(
                 card_id=card_id,
                 texture_path=texture,
                 renderer=self.renderer,
                 textures=self.textures,
-                position=start_pos,
+                position=glm.vec2(0.0, -8.0),
             )
-            vis.move_to(slot.position)
+            vis.move_to(target)
             self.view_cards[card_id] = vis
             self.textures.load(texture)
 
@@ -153,78 +131,100 @@ class ViewBoard:
         if vis:
             vis.delete()
 
-    def on_mouse_move(self, mx: float, my: float) -> None:
-        hit = self.layout.slot_at(mx, my)
-        self._hovered_slot = hit if hit != self._selected_slot else None
+    def on_mouse_move(self, mx: float, my: float,
+                      proj: glm.mat4, view: glm.mat4,
+                      viewport: tuple[int, int, int, int]) -> None:
+        ray_o, ray_d = _unproject_ray(mx, my, proj, view, viewport)
+        hit = self.layout.ray_hit(ray_o, ray_d)
+        for slot in self.layout.all_slots():
+            slot.hovered = (slot is hit and slot is not self._selected_slot)
+        self._hovered_slot = hit
 
-    def on_mouse_click(self, mx: float, my: float) -> SlotRect | None:
-        hit = self.layout.slot_at(mx, my)
+    def on_mouse_click(self, mx: float, my: float,
+                       proj: glm.mat4, view: glm.mat4,
+                       viewport: tuple[int, int, int, int]) -> BattleSlot | None:
+        ray_o, ray_d = _unproject_ray(mx, my, proj, view, viewport)
+        hit = self.layout.ray_hit(ray_o, ray_d)
         if hit:
-            self._selected_slot = hit if hit != self._selected_slot else None
+            if self._selected_slot is hit:
+                self._selected_slot = None
+                hit.selected = False
+            else:
+                if self._selected_slot:
+                    self._selected_slot.selected = False
+                self._selected_slot = hit
+                hit.selected = True
         return self._selected_slot
 
     def update(self, dt: float) -> None:
-        for view_card in self.view_cards.values():
-            view_card.update_lerp(dt)
+        for vc in self.view_cards.values():
+            vc.update_lerp(dt)
 
-    def render(self, proj3d: glm.mat4, view: glm.mat4, proj2d: glm.mat4) -> None:
-        self._render_board_mesh(proj3d, view)
-        self._render_slots(proj2d)
-        self._render_cards(proj2d)
+    def render(self, proj: glm.mat4, view: glm.mat4) -> None:
+        self._render_board_mesh(proj, view)
+        self._render_slot_borders(proj, view)
+        self._render_cards(proj, view)
 
     def _render_board_mesh(self, proj: glm.mat4, view: glm.mat4) -> None:
-        glEnable(GL_DEPTH_TEST)
-
         prog = self.renderer.use("objects_board")
-
         glUniformMatrix4fv(glGetUniformLocation(prog, "projection"),
-                           1, GL_FALSE, glm.value_ptr(proj))
+                        1, GL_FALSE, glm.value_ptr(proj))
         glUniformMatrix4fv(glGetUniformLocation(prog, "camera"),
-                           1, GL_FALSE, glm.value_ptr(view))
+                        1, GL_FALSE, glm.value_ptr(view))
         glUniformMatrix4fv(glGetUniformLocation(prog, "model"),
-                           1, GL_FALSE, glm.value_ptr(glm.mat4(1.0)))
+                        1, GL_FALSE, glm.value_ptr(glm.mat4(1.0)))
         glUniform1f(glGetUniformLocation(prog, "alpha"), 1.0)
-
         self.renderer.draw("board_mesh")
 
-        glDisable(GL_DEPTH_TEST)
-
-    def _render_slots(self, proj: glm.mat4) -> None:
-        prog = self.renderer.use("scenes_battleground")
-
+    def _render_slot_borders(self, proj: glm.mat4, view: glm.mat4) -> None:
+        prog = self.renderer.use("objects_slot")
         glUniformMatrix4fv(glGetUniformLocation(prog, "projection"),
-                           1, GL_FALSE, glm.value_ptr(proj))
-
+                        1, GL_FALSE, glm.value_ptr(proj))
+        glUniformMatrix4fv(glGetUniformLocation(prog, "camera"),
+                        1, GL_FALSE, glm.value_ptr(view))
+        glUniformMatrix4fv(glGetUniformLocation(prog, "model"),
+                        1, GL_FALSE, glm.value_ptr(glm.mat4(1.0)))
+        
         glBindVertexArray(self.renderer.get_vao_id_by_key("slot_borders"))
-
         for i, slot in enumerate(self._slot_list):
             color = self._border_color(slot)
             glUniform4f(glGetUniformLocation(prog, "color"),
                         color.x, color.y, color.z, color.w)
             glUniform1f(glGetUniformLocation(prog, "alpha"), color.w)
             glDrawArrays(GL_LINE_LOOP, i * 4, 4)
-
         glBindVertexArray(0)
 
-    def _border_color(self, slot: SlotRect) -> glm.vec4:
-        if slot == self._selected_slot:
+    def _border_color(self, slot: BattleSlot) -> glm.vec4:
+        if slot is self._selected_slot:
             return _BORDER_SELECTED
-        if slot == self._hovered_slot:
+        if slot is self._hovered_slot:
             return _BORDER_HOVER
         return _BORDER.get(slot.key.owner, glm.vec4(0.6, 0.6, 0.6, 0.7))
 
-    def _render_cards(self, proj: glm.mat4) -> None:
+    def _render_cards(self, proj: glm.mat4, view: glm.mat4) -> None:
         glEnable(GL_BLEND)
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+        for vc in self.view_cards.values():
+            vc.draw("objects_card", proj)
+            self.renderer.use("objects_board")
 
-        for view_card in self.view_cards.values():
-            view_card.draw("objects_card", proj)
-            self.renderer.use("scenes_battleground")
 
-    def __del__(self):
-        self.events.unsubscribe(
-            Events.LOGIC_COMBAT_RESOLVED, self._on_combat_resolved)
-        self.events.unsubscribe(Events.CARD_PLACED,
-                                self._on_card_placed)
-        self.events.unsubscribe(Events.CARD_REMOVED,
-                                self._on_card_removed)
+def _unproject_ray(
+    mx: float, my: float,
+    proj: glm.mat4, view: glm.mat4,
+    viewport: tuple[int, int, int, int],
+) -> tuple[glm.vec3, glm.vec3]:
+    vx, vy, vw, vh = viewport
+    ndc_x = 2.0 * (mx - vx) / vw - 1.0
+    ndc_y = -2.0 * (my - vy) / vh + 1.0
+
+    inv = glm.inverse(proj * view)
+
+    near = inv * glm.vec4(ndc_x, ndc_y, -1.0, 1.0)
+    far = inv * glm.vec4(ndc_x, ndc_y,  1.0, 1.0)
+
+    near_w = glm.vec3(near) / near.w
+    far_w = glm.vec3(far) / far.w
+
+    direction = glm.normalize(far_w - near_w)
+    return near_w, direction
