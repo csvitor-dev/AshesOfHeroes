@@ -5,10 +5,14 @@ class Events(Enum):
     ACTION_EXIT_GAME = auto()
     ACTION_PAUSE_GAME = auto()
 
+    CARD_DRAWN = auto()
     CARD_DAMAGED = auto()
     CARD_DESTROYED = auto()
     CARD_PLACED = auto()
     CARD_REMOVED = auto()
+
+    DECK_LOADED = auto()
+    DECK_UPDATED = auto()
 
     ENTITY_SELECTED = auto()
 
@@ -19,4 +23,7 @@ class Events(Enum):
 
     LOGIC_COMBAT_RESOLVED = auto()
     LOGIC_MATCH_SETUP_COMPLETE = auto()
-    LOGIC_TURN_STARTED = auto()
+
+    TURN_CHANGED = auto()
+    TURN_STARTED = auto()
+    TURN_END_REQUESTED = auto()

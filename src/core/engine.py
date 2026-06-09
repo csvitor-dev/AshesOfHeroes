@@ -30,6 +30,8 @@ class Engine:
 
         self.__events.subscribe(Events.ACTION_EXIT_GAME,
                                 lambda _: self.__window.close_window())
+        self.__events.subscribe(Events.TURN_END_REQUESTED,
+                                self.__on_turn_end_requested)
 
         self.__is_running = True
         self.__last_frame_time = time.time()
@@ -41,12 +43,13 @@ class Engine:
             on_mouse_click=self.__on_mouse_click,
         )
 
+    def __on_turn_end_requested(self, data: dict[str, Any]) -> None:
+        if isinstance(self.__scenes.current, BattlegroundScene):
+            self.__camera.rotate_perspective()
+
     def __on_key(self, key: int, action: int, mods: int) -> None:
-        if action == glfw.PRESS and key == glfw.KEY_ENTER:
-            if isinstance(self.__scenes.current, BattlegroundScene):
-                self.__camera.rotate_perspective()
-                return
-        self.__scenes.on_key(key, action, mods)
+        if action == glfw.PRESS:
+            self.__scenes.on_key(key, action, mods)
 
     def __on_mouse_click(self, button: int, mx: float, my: float) -> None:
         if button == glfw.MOUSE_BUTTON_LEFT:
