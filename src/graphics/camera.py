@@ -1,4 +1,3 @@
-from __future__ import annotations
 import math
 from pyglm import glm
 from OpenGL.GL import *
@@ -8,9 +7,9 @@ from lib.types import GameSide
 class Camera:
     _UP = glm.vec3(0.0, 0.0, 1.0)
 
-    _EYE_RADIUS: float = 12.73
-    _EYE_Z:      float = 10.0
-    _EYE_TILT:   float = 0.5
+    _EYE_RADIUS: float = 9.0
+    _EYE_Z:      float = 12.0
+    _EYE_TILT:   float = 0.3
 
     _ANGLE = {
         GameSide.BLUE: math.radians(270),
