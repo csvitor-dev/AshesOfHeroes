@@ -62,8 +62,8 @@ class BattlegroundRenderer:
     def _render_3d(self, proj: glm.mat4, view: glm.mat4) -> None:
         glEnable(GL_DEPTH_TEST)
         glDepthFunc(GL_LESS)
-        self._view_aegis.render(proj, view)
         self._view_board.render(proj, view)
+        self._view_aegis.render(proj, view)
 
     def _render_2d(self, proj: glm.mat4) -> None:
         glDisable(GL_DEPTH_TEST)

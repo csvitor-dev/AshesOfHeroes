@@ -18,7 +18,7 @@ class ViewAegis:
         )
         self._build_aegis(
             pos=glm.vec3(0.0, -4.7, 0.0),
-            color_body=(0.30, 0.50, 1.00),
+            color_body=(0.30, 0.30, 0.90),
         )
 
     def unload_assets(self) -> None:

@@ -59,9 +59,14 @@ class Entity3D:
     def draw(self, shader_program: int):
         loc_model = glGetUniformLocation(shader_program, "model")
         loc_color = glGetUniformLocation(shader_program, "color")
+        loc_normal = glGetUniformLocation(shader_program, "normal")
+        
+        model = self.model_matrix()        
+        normal_matrix = glm.transpose(glm.inverse(glm.mat3(model)))
 
         glUniformMatrix4fv(loc_model, 1, GL_FALSE,
-                           glm.value_ptr(self.model_matrix()))
+                           glm.value_ptr(model))
+        glUniformMatrix3fv(loc_normal, 1, GL_FALSE, glm.value_ptr(normal_matrix))
         glUniform4fv(loc_color, 1, glm.value_ptr(self.color))
 
         glBindVertexArray(self._vao)

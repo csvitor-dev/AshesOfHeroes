@@ -6,14 +6,15 @@ layout(location = 1) in vec3 color;
 uniform mat4 projection;
 uniform mat4 camera;
 uniform mat4 model;
+uniform mat3 normal;
 
 out vec3 out_color;
 out vec3 out_normal;
-out vec3 fragPosition;
 
 void main() {
     vec4 worldPosition = model * vec4(position, 1.0);
-    fragPosition     = worldPosition.xyz;
-    out_color        = color;
-    gl_Position    = projection * camera * worldPosition;
+
+    out_color = color;
+    out_normal = normalize(normal * position);
+    gl_Position = projection * camera * worldPosition;
 }
