@@ -1,4 +1,5 @@
 import math
+import os
 from OpenGL.GL import *
 from pyglm import glm
 from typing import Any
@@ -17,6 +18,22 @@ _POS_STACK_BLUE = glm.vec3(5.2, -1.1, 0.0)
 _POS_STACK_RED = glm.vec3(5.2,  1.1, 0.0)
 _POS_BTN = glm.vec3(5.2,  0.0, 0.0)
 
+_CARDS_DIR = "assets/cards"
+_DECK_SIZE = 5
+
+
+def _card_textures() -> list[str]:
+    supported = {".png", ".jpg", ".jpeg"}
+    try:
+        files = sorted([
+            os.path.join(_CARDS_DIR, f)
+            for f in os.listdir(_CARDS_DIR)
+            if os.path.splitext(f)[1].lower() in supported
+        ])
+    except FileNotFoundError:
+        files = []
+    return files
+
 
 class ViewDeck:
     def __init__(
@@ -25,6 +42,7 @@ class ViewDeck:
         event_manager: EventManager,
         textures:      TextureManager,
     ):
+
         self._renderer = renderer
         self._textures = textures
         self._events = event_manager
@@ -32,7 +50,6 @@ class ViewDeck:
         self._stack_blue: CardStack | None = None
         self._stack_red:  CardStack | None = None
         self._btn:        TurnButton | None = None
-
         self._btn_hovered = False
 
     def load_assets(self) -> None:
@@ -51,8 +68,33 @@ class ViewDeck:
         self._btn = TurnButton(color=(0.22, 0.44, 0.92))
         self._btn.position = _POS_BTN
 
-        self._events.subscribe(Events.CARD_DRAWN,  self._on_card_drawn)
+        self._init_decks()
+
         self._events.subscribe(Events.DECK_LOADED, self._on_deck_loaded)
+
+    def _init_decks(self) -> None:
+        self._renderer.load_program("objects", "card")
+        textures = _card_textures()
+        default = "assets/cards/heroes/hero_1.png"
+
+        for i in range(_DECK_SIZE):
+            tex = textures[i % len(textures)] if textures else default
+            self._push_card(self._stack_blue, card_id=f"blue_{i}", texture=tex)
+
+        for i in range(_DECK_SIZE):
+            tex = textures[i % len(textures)] if textures else default
+            self._push_card(self._stack_red, card_id=f"red_{i}", texture=tex)
+
+    def _push_card(self, stack: CardStack, card_id: str, texture: str) -> None:
+        vis = ViewCard(
+            card_id=card_id,
+            texture_path=texture,
+            renderer=self._renderer,
+            textures=self._textures,
+            position=glm.vec2(0.0, 0.0),
+        )
+        self._textures.load(texture)
+        stack.push_card(vis)
 
     def unload_assets(self) -> None:
         if self._stack_blue:
@@ -64,7 +106,6 @@ class ViewDeck:
         self._stack_blue = None
         self._stack_red = None
         self._btn = None
-        self._events.unsubscribe(Events.CARD_DRAWN,  self._on_card_drawn)
         self._events.unsubscribe(Events.DECK_LOADED, self._on_deck_loaded)
 
     def _on_deck_loaded(self, data: dict[str, Any]) -> None:
@@ -72,21 +113,12 @@ class ViewDeck:
         if stack is None:
             return
         for card_data in data.get("cards", []):
-            vis = ViewCard(
+            self._push_card(
+                stack,
                 card_id=card_data["id"],
-                texture_path=card_data.get(
-                    "texture", "assets/cards/default.png"),
-                renderer=self._renderer,
-                textures=self._textures,
-                position=glm.vec2(0.0, 0.0),
+                texture=card_data.get(
+                    "texture", "assets/cards/heroes/hero_1.png"),
             )
-            self._textures.load(vis.texture_path)
-            stack.push_card(vis)
-
-    def _on_card_drawn(self, data: dict[str, Any]) -> None:
-        stack = self._stack_for(data.get("side"))
-        if stack:
-            stack.pop_card()
 
     def _stack_for(self, side: GameSide) -> CardStack | None:
         if side == GameSide.BLUE:
@@ -95,50 +127,70 @@ class ViewDeck:
             return self._stack_red
         return None
 
-    def _hit_button(
-        self,
-        ray_origin: glm.vec3,
-        ray_dir:    glm.vec3,
-    ) -> bool:
+    def _hit_button(self, ray_origin: glm.vec3, ray_dir: glm.vec3) -> bool:
         if self._btn is None:
             return False
-
         pos = self._btn.position
         z = pos.z + TurnButton.H_BASE + TurnButton.H_TOP * 0.5
-
         dz = ray_dir.z
         if abs(dz) < 1e-6:
             return False
-
         t = (z - ray_origin.z) / dz
         if t < 0:
             return False
-
         hit = ray_origin + ray_dir * t
-        dx = hit.x - pos.x
-        dy = hit.y - pos.y
+        dx, dy = hit.x - pos.x, hit.y - pos.y
+        return math.sqrt(dx*dx + dy*dy) <= TurnButton.RADIUS
 
-        return math.sqrt(dx * dx + dy * dy) <= TurnButton.RADIUS
+    def _hit_top_card(
+        self, ray_origin: glm.vec3, ray_dir: glm.vec3, stack: CardStack
+    ) -> bool:
+        if stack.count == 0:
+            return False
+        pos = stack.position
+        z = pos.z + CardStack.SLOT_H + stack.count * CardStack.CARD_THICK + 0.01
+        dz = ray_dir.z
+        if abs(dz) < 1e-6:
+            return False
+        t = (z - ray_origin.z) / dz
+        if t < 0:
+            return False
+        hit = ray_origin + ray_dir * t
+        hw = CardStack.CARD_W / 2
+        hd = CardStack.CARD_D / 2
+        return abs(hit.x - pos.x) <= hw and abs(hit.y - pos.y) <= hd
 
     def on_mouse_move(
-        self,
-        mx: float, my: float,
+        self, mx: float, my: float,
         proj: glm.mat4, view: glm.mat4,
         viewport: tuple[int, int, int, int],
     ) -> None:
-        ray_o, ray_d = _unproject_ray(mx, my, proj, view, viewport)
+        ray_o, ray_d = unproject_ray(mx, my, proj, view, viewport)
         self._btn_hovered = self._hit_button(ray_o, ray_d)
 
     def on_mouse_click(
-        self,
-        mx: float, my: float,
+        self, mx: float, my: float,
         proj: glm.mat4, view: glm.mat4,
         viewport: tuple[int, int, int, int],
     ) -> bool:
-        ray_o, ray_d = _unproject_ray(mx, my, proj, view, viewport)
+        ray_o, ray_d = unproject_ray(mx, my, proj, view, viewport)
+
         if self._hit_button(ray_o, ray_d):
             self._events.emit(Events.TURN_END_REQUESTED)
             return True
+
+        if self._stack_blue and self._hit_top_card(ray_o, ray_d, self._stack_blue):
+            card = self._stack_blue.pop_card()
+            if card:
+                self._events.emit(Events.CARD_DRAWN, card=card)
+            return True
+
+        if self._stack_red and self._hit_top_card(ray_o, ray_d, self._stack_red):
+            card = self._stack_red.pop_card()
+            if card:
+                self._events.emit(Events.CARD_DRAWN, card=card)
+            return True
+
         return False
 
     def render(self, proj: glm.mat4, view: glm.mat4) -> None:
@@ -152,25 +204,25 @@ class ViewDeck:
             self._stack_blue.draw(prog)
         if self._stack_red:
             self._stack_red.draw(prog)
-        if self._btn:
 
-            if self._btn_hovered:
-                self._btn.color = glm.vec4(1.0, 0.97, 0.85, 1.0)
-            else:
-                self._btn.color = glm.vec4(0.88, 0.84, 0.72, 1.0)
+        if self._btn:
+            self._btn.color = (
+                glm.vec4(1.0, 0.97, 0.85, 1.0) if self._btn_hovered
+                else glm.vec4(0.22, 0.44, 0.92, 1.0)
+            )
             self._btn.draw(prog)
 
-        self._render_stacked_cards(prog, proj, view)
+        self._render_stacked_cards(prog)
 
-    def _render_stacked_cards(self, prog: int, proj: glm.mat4, view: glm.mat4) -> None:
+    def _render_stacked_cards(self, prog: int) -> None:
         for stack in (self._stack_blue, self._stack_red):
             if stack is None:
                 continue
             for card in stack.cards:
-                card.draw(prog, proj, view)
+                card.draw_3d(prog)
 
 
-def _unproject_ray(
+def unproject_ray(
     mx: float, my: float,
     proj: glm.mat4, view: glm.mat4,
     viewport: tuple[int, int, int, int],
@@ -178,12 +230,9 @@ def _unproject_ray(
     vx, vy, vw, vh = viewport
     ndc_x = 2.0 * (mx - vx) / vw - 1.0
     ndc_y = -2.0 * (my - vy) / vh + 1.0
-
     inv = glm.inverse(proj * view)
     near = inv * glm.vec4(ndc_x, ndc_y, -1.0, 1.0)
     far = inv * glm.vec4(ndc_x, ndc_y,  1.0, 1.0)
-
     near_w = glm.vec3(near) / near.w
     far_w = glm.vec3(far) / far.w
-
     return near_w, glm.normalize(far_w - near_w)

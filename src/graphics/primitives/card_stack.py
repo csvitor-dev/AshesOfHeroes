@@ -29,6 +29,10 @@ class CardStack(Entity3D):
     def cards(self) -> list[ViewCard]:
         return self._cards
 
+    @property
+    def count(self) -> int:
+        return len(self._cards)
+
     def _build_tray(self) -> tuple[np.ndarray, int]:
         tris: list[list[float]] = []
         ct = self._color_tray

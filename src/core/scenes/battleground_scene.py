@@ -77,3 +77,12 @@ class BattlegroundScene(Scene):
     def on_mouse_click(self, button: int, mx: float, my: float) -> None:
         if self._board:
             self._board.on_mouse_click(mx, my)
+
+    def on_mouse_press(self, mx: float, my: float) -> None:
+        if self._board:
+            self._board.on_mouse_press(mx, my)
+
+
+    def on_mouse_release(self, mx: float, my: float) -> None:
+        if self._board:
+            self._board.on_mouse_release(mx, my)

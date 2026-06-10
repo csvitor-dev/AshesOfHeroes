@@ -72,6 +72,7 @@ class BattleSlot:
     size:     glm.vec2
     hovered:  bool = False
     selected: bool = False
+    card: Optional[object] = None
 
     def world_verts(self) -> np.ndarray:
         hw = self.size.x / 2

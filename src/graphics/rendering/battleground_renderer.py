@@ -74,6 +74,7 @@ class BattlegroundRenderer:
         glDisable(GL_DEPTH_TEST)
         glEnable(GL_BLEND)
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+        self._view_hand.render(proj, self._game_state)
 
     def _render_hud(self, proj: glm.mat4) -> None:
         self._view_hud.render(proj, self._game_state)
@@ -96,3 +97,16 @@ class BattlegroundRenderer:
                 self._view_board.on_mouse_click(
                     mx, my, self.__proj3d, self.__view, vp)
         self._view_hand.on_mouse_click(mx, my)
+
+    def on_mouse_press(self, mx: float, my: float) -> None:
+        self._view_hand.on_mouse_press(mx, my)
+
+    def on_mouse_release(self, mx: float, my: float) -> None:
+        if self.__proj3d and self.__view:
+            self._view_hand.on_mouse_release(
+                mx, my,
+                proj=self.__proj3d,
+                view=self.__view,
+                viewport=(0, 0, 1280, 720),
+                board_layout=self._view_board.layout,
+            )

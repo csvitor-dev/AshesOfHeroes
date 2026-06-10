@@ -107,7 +107,7 @@ class ViewBoard:
     def _on_card_placed(self, data: Any) -> None:
         card_id = data["card_id"]
         slot_key = data["slot_key"]
-        texture = data.get("texture", "assets/cards/default.png")
+        texture = data.get("texture", "assets/cards/heroes/hero_1.png")
         slot = self.layout.get(slot_key)
         if slot is None:
             return
@@ -134,7 +134,7 @@ class ViewBoard:
     def on_mouse_move(self, mx: float, my: float,
                       proj: glm.mat4, view: glm.mat4,
                       viewport: tuple[int, int, int, int]) -> None:
-        ray_o, ray_d = _unproject_ray(mx, my, proj, view, viewport)
+        ray_o, ray_d = unproject_ray(mx, my, proj, view, viewport)
         hit = self.layout.ray_hit(ray_o, ray_d)
         for slot in self.layout.all_slots():
             slot.hovered = (slot is hit and slot is not self._selected_slot)
@@ -143,7 +143,7 @@ class ViewBoard:
     def on_mouse_click(self, mx: float, my: float,
                        proj: glm.mat4, view: glm.mat4,
                        viewport: tuple[int, int, int, int]) -> BattleSlot | None:
-        ray_o, ray_d = _unproject_ray(mx, my, proj, view, viewport)
+        ray_o, ray_d = unproject_ray(mx, my, proj, view, viewport)
         hit = self.layout.ray_hit(ray_o, ray_d)
         if hit:
             if self._selected_slot is hit:
@@ -168,23 +168,23 @@ class ViewBoard:
     def _render_board_mesh(self, proj: glm.mat4, view: glm.mat4) -> None:
         prog = self.renderer.use("objects_board")
         glUniformMatrix4fv(glGetUniformLocation(prog, "projection"),
-                        1, GL_FALSE, glm.value_ptr(proj))
+                           1, GL_FALSE, glm.value_ptr(proj))
         glUniformMatrix4fv(glGetUniformLocation(prog, "camera"),
-                        1, GL_FALSE, glm.value_ptr(view))
+                           1, GL_FALSE, glm.value_ptr(view))
         glUniformMatrix4fv(glGetUniformLocation(prog, "model"),
-                        1, GL_FALSE, glm.value_ptr(glm.mat4(1.0)))
+                           1, GL_FALSE, glm.value_ptr(glm.mat4(1.0)))
         glUniform1f(glGetUniformLocation(prog, "alpha"), 1.0)
         self.renderer.draw("board_mesh")
 
     def _render_slot_borders(self, proj: glm.mat4, view: glm.mat4) -> None:
         prog = self.renderer.use("objects_slot")
         glUniformMatrix4fv(glGetUniformLocation(prog, "projection"),
-                        1, GL_FALSE, glm.value_ptr(proj))
+                           1, GL_FALSE, glm.value_ptr(proj))
         glUniformMatrix4fv(glGetUniformLocation(prog, "camera"),
-                        1, GL_FALSE, glm.value_ptr(view))
+                           1, GL_FALSE, glm.value_ptr(view))
         glUniformMatrix4fv(glGetUniformLocation(prog, "model"),
-                        1, GL_FALSE, glm.value_ptr(glm.mat4(1.0)))
-        
+                           1, GL_FALSE, glm.value_ptr(glm.mat4(1.0)))
+
         glBindVertexArray(self.renderer.get_vao_id_by_key("slot_borders"))
         for i, slot in enumerate(self._slot_list):
             color = self._border_color(slot)
@@ -209,10 +209,10 @@ class ViewBoard:
             self.renderer.use("objects_board")
 
 
-def _unproject_ray(
+def unproject_ray(
     mx: float, my: float,
     proj: glm.mat4, view: glm.mat4,
-    viewport: tuple[int, int, int, int],
+    viewport: tuple[float, float, float, float],
 ) -> tuple[glm.vec3, glm.vec3]:
     vx, vy, vw, vh = viewport
     ndc_x = 2.0 * (mx - vx) / vw - 1.0

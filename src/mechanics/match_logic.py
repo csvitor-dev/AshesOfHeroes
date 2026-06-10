@@ -19,7 +19,7 @@ class MatchLogic:
 
     def __start_turn(self, player_id: GameSide):
         self.__current_turn_player_id = player_id
-        self.__events.emit(Events.LOGIC_TURN_STARTED, player_id=player_id)
+        self.__events.emit(Events.TURN_STARTED, player_id=player_id)
 
     def execute_attack(self, attacker_id: int, target_id: int):
         self.__events.emit(Events.LOGIC_COMBAT_RESOLVED,

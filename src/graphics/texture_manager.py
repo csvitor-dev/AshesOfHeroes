@@ -12,7 +12,7 @@ class TextureManager:
             return self._cache[path]
 
         img = Image.open(path).convert('RGBA')
-        img = img.transpose(Image.FLIP_TOP_BOTTOM)
+        # img = img.transpose(Image.FLIP_TOP_BOTTOM)
         data = np.array(img, dtype=np.uint8)
 
         tex_id = glGenTextures(1)
