@@ -41,6 +41,8 @@ class Engine:
             on_key=self.__on_key,
             on_mouse_move=self.__scenes.on_mouse_move,
             on_mouse_click=self.__on_mouse_click,
+            on_mouse_press=self.__on_mouse_press,
+            on_mouse_release=self.__on_mouse_release,
         )
 
     def __on_turn_end_requested(self, data: dict[str, Any]) -> None:
@@ -54,6 +56,14 @@ class Engine:
     def __on_mouse_click(self, button: int, mx: float, my: float) -> None:
         if button == glfw.MOUSE_BUTTON_LEFT:
             self.__scenes.on_mouse_click(button, mx, my)
+
+    def __on_mouse_press(self, button: int, mx: float, my: float) -> None:
+        if button == glfw.MOUSE_BUTTON_LEFT:
+            self.__scenes.on_mouse_press(mx, my)
+
+    def __on_mouse_release(self, button: int, mx: float, my: float) -> None:
+        if button == glfw.MOUSE_BUTTON_LEFT:
+            self.__scenes.on_mouse_release(mx, my)
 
     def run(self) -> None:
         while self.__is_running and not self.__window.should_close():

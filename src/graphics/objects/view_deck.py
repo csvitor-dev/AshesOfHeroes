@@ -5,6 +5,7 @@ from pyglm import glm
 from typing import Any
 
 from src.core.event import EventManager
+from src.graphics.camera import Camera
 from src.graphics.rendering.renderer import Renderer
 from src.graphics.primitives.card_stack import CardStack
 from src.graphics.primitives.turn_button import TurnButton
@@ -41,11 +42,13 @@ class ViewDeck:
         renderer:      Renderer,
         event_manager: EventManager,
         textures:      TextureManager,
+        camera:        Camera,
     ):
 
         self._renderer = renderer
         self._textures = textures
         self._events = event_manager
+        self._camera = camera
 
         self._stack_blue: CardStack | None = None
         self._stack_red:  CardStack | None = None
@@ -83,9 +86,9 @@ class ViewDeck:
 
         for i in range(_DECK_SIZE):
             tex = textures[i % len(textures)] if textures else default
-            self._push_card(self._stack_red, card_id=f"red_{i}", texture=tex)
+            self._push_card(self._stack_red, card_id=f"red_{i}", texture=tex, face_flip=1.0)
 
-    def _push_card(self, stack: CardStack, card_id: str, texture: str) -> None:
+    def _push_card(self, stack: CardStack, card_id: str, texture: str, face_flip: float = 0.0) -> None:
         vis = ViewCard(
             card_id=card_id,
             texture_path=texture,
@@ -93,6 +96,7 @@ class ViewDeck:
             textures=self._textures,
             position=glm.vec2(0.0, 0.0),
         )
+        vis.face_flip = face_flip
         self._textures.load(texture)
         stack.push_card(vis)
 
@@ -109,15 +113,17 @@ class ViewDeck:
         self._events.unsubscribe(Events.DECK_LOADED, self._on_deck_loaded)
 
     def _on_deck_loaded(self, data: dict[str, Any]) -> None:
-        stack = self._stack_for(data.get("side"))
+        side = data.get("side")
+        stack = self._stack_for(side)
         if stack is None:
             return
+        face_flip = 1.0 if side == GameSide.RED else 0.0
         for card_data in data.get("cards", []):
             self._push_card(
                 stack,
                 card_id=card_data["id"],
-                texture=card_data.get(
-                    "texture", "assets/cards/heroes/hero_1.png"),
+                texture=card_data.get("texture", "assets/cards/heroes/hero_1.png"),
+                face_flip=face_flip,
             )
 
     def _stack_for(self, side: GameSide) -> CardStack | None:
@@ -180,15 +186,17 @@ class ViewDeck:
             return True
 
         if self._stack_blue and self._hit_top_card(ray_o, ray_d, self._stack_blue):
-            card = self._stack_blue.pop_card()
-            if card:
-                self._events.emit(Events.CARD_DRAWN, card=card)
+            if self._camera.current_perspective == GameSide.BLUE:
+                card = self._stack_blue.pop_card()
+                if card:
+                    self._events.emit(Events.CARD_DRAWN, card=card)
             return True
 
         if self._stack_red and self._hit_top_card(ray_o, ray_d, self._stack_red):
-            card = self._stack_red.pop_card()
-            if card:
-                self._events.emit(Events.CARD_DRAWN, card=card)
+            if self._camera.current_perspective == GameSide.RED:
+                card = self._stack_red.pop_card()
+                if card:
+                    self._events.emit(Events.CARD_DRAWN, card=card)
             return True
 
         return False
@@ -212,14 +220,14 @@ class ViewDeck:
             )
             self._btn.draw(prog)
 
-        self._render_stacked_cards(prog)
+        self._render_stacked_cards(prog, proj, view)
 
-    def _render_stacked_cards(self, prog: int) -> None:
+    def _render_stacked_cards(self, prog: int, proj: glm.mat4, view: glm.mat4) -> None:
         for stack in (self._stack_blue, self._stack_red):
             if stack is None:
                 continue
             for card in stack.cards:
-                card.draw_3d(prog)
+                card.draw_3d(prog, proj=proj, view=view)
 
 
 def unproject_ray(

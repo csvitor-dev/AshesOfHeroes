@@ -72,6 +72,14 @@ class SceneManager:
         if self.__stack:
             self.__stack[-1].on_mouse_click(button, mx, my)
 
+    def on_mouse_press(self, mx: float, my: float) -> None:
+        if self.__stack:
+            self.__stack[-1].on_mouse_press(mx, my)
+
+    def on_mouse_release(self, mx: float, my: float) -> None:
+        if self.__stack:
+            self.__stack[-1].on_mouse_release(mx, my)
+
     @property
     def current(self) -> Scene | None:
         return self.__stack[-1] if self.__stack else None
@@ -112,3 +120,7 @@ class Scene(ABC):
 
     @abstractmethod
     def on_mouse_click(self, button: int, mx: float, my: float) -> None: ...
+
+    def on_mouse_press(self, mx: float, my: float) -> None: ...
+
+    def on_mouse_release(self, mx: float, my: float) -> None: ...

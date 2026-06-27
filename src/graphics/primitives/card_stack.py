@@ -8,8 +8,8 @@ from src.graphics.objects.view_card import ViewCard
 
 
 class CardStack(Entity3D):
-    CARD_W:      float = 0.75
-    CARD_D:      float = 1.05
+    CARD_W:      float = 1.07
+    CARD_D:      float = 1.47
     SLOT_H:      float = 0.04
     CARD_THICK:  float = 0.018
 

@@ -3,6 +3,7 @@ from pyglm import glm
 
 from src.core.event import EventManager
 from src.core.animation import AnimationQueue
+from src.graphics.camera import Camera
 from src.graphics.texture_manager import TextureManager
 from src.graphics.rendering.renderer import Renderer
 from src.graphics.objects.view_board import ViewBoard
@@ -20,7 +21,8 @@ class BattlegroundRenderer:
         event_manager: EventManager,
         animation_queue: AnimationQueue,
         textures: TextureManager,
-        game_state:      GameState,
+        game_state: GameState,
+        camera: Camera,
     ):
         self.__proj3d: glm.mat4 = glm.mat4(1.0)
         self.__view: glm.mat4 = glm.mat4(1.0)
@@ -30,8 +32,8 @@ class BattlegroundRenderer:
 
         self._view_aegis = ViewAegis(renderer)
         self._view_board = ViewBoard(
-            event_manager, animation_queue, renderer, textures)
-        self._view_deck = ViewDeck(renderer, event_manager, textures)
+            event_manager, animation_queue, renderer, textures, camera)
+        self._view_deck = ViewDeck(renderer, event_manager, textures, camera)
         self._view_hud = ViewHud(renderer)
         self._view_hand = ViewInventory(event_manager, renderer, textures)
 
@@ -109,4 +111,5 @@ class BattlegroundRenderer:
                 view=self.__view,
                 viewport=(0, 0, 1280, 720),
                 board_layout=self._view_board.layout,
+                can_interact=self._view_board._can_interact,
             )

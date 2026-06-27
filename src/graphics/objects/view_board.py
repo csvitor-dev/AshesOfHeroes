@@ -6,6 +6,7 @@ from OpenGL.GL import *
 from src.core.animation import AnimationQueue
 from src.core.event import EventManager
 from src.core.animations.card_animation import CardAnimation
+from src.graphics.camera import Camera
 from src.graphics.slots import BattleSlot
 from src.graphics.layouts.board_layout import BoardLayout
 from src.graphics.rendering.renderer import Renderer
@@ -13,7 +14,7 @@ from src.graphics.vertex import VertexLayout, VertexAttribute
 from src.graphics.texture_manager import TextureManager
 from src.graphics.objects.view_card import ViewCard
 from lib.events import Events
-from lib.types import SlotOwner
+from lib.types import GameSide, SlotOwner
 
 
 _BORDER = {
@@ -34,12 +35,14 @@ class ViewBoard:
         animation_queue: AnimationQueue,
         renderer:        Renderer,
         textures:        TextureManager,
+        camera:          Camera,
     ):
         self.events = event_manager
         self.animation_queue = animation_queue
         self.renderer = renderer
         self.textures = textures
         self.layout = BoardLayout()
+        self._camera = camera
 
         self._hovered_slot:  BattleSlot | None = None
         self._selected_slot: BattleSlot | None = None
@@ -108,22 +111,37 @@ class ViewBoard:
         card_id = data["card_id"]
         slot_key = data["slot_key"]
         texture = data.get("texture", "assets/cards/heroes/hero_1.png")
+        old_inv_card = data.get("card")
+
         slot = self.layout.get(slot_key)
         if slot is None:
             return
-        target = glm.vec2(slot.center.x, slot.center.y)
+
+        flip = 1.0 if slot.key.owner == SlotOwner.OPPONENT else 0.0
+
         if card_id in self.view_cards:
-            self.view_cards[card_id].move_to(target)
+            existing = self.view_cards[card_id]
+            for s in self.layout.all_slots():
+                if s.card is existing:
+                    s.card = None
+            existing.position = glm.vec3(slot.center)
+            existing.face_flip = flip
+            slot.card = existing
         else:
+            if old_inv_card is not None:
+                old_inv_card.delete()
+
             vis = ViewCard(
                 card_id=card_id,
                 texture_path=texture,
                 renderer=self.renderer,
                 textures=self.textures,
-                position=glm.vec2(0.0, -8.0),
+                position=glm.vec2(0.0, 0.0),
             )
-            vis.move_to(target)
+            vis.position = glm.vec3(slot.center)
+            vis.face_flip = flip
             self.view_cards[card_id] = vis
+            slot.card = vis
             self.textures.load(texture)
 
     def _on_card_removed(self, data: Any) -> None:
@@ -131,11 +149,18 @@ class ViewBoard:
         if vis:
             vis.delete()
 
+    def _can_interact(self, slot: BattleSlot) -> bool:
+        if self._camera.current_perspective == GameSide.BLUE:
+            return slot.key.owner == SlotOwner.PLAYER
+        return slot.key.owner == SlotOwner.OPPONENT
+
     def on_mouse_move(self, mx: float, my: float,
                       proj: glm.mat4, view: glm.mat4,
                       viewport: tuple[int, int, int, int]) -> None:
         ray_o, ray_d = unproject_ray(mx, my, proj, view, viewport)
         hit = self.layout.ray_hit(ray_o, ray_d)
+        if hit and not self._can_interact(hit):
+            hit = None
         for slot in self.layout.all_slots():
             slot.hovered = (slot is hit and slot is not self._selected_slot)
         self._hovered_slot = hit
@@ -145,6 +170,8 @@ class ViewBoard:
                        viewport: tuple[int, int, int, int]) -> BattleSlot | None:
         ray_o, ray_d = unproject_ray(mx, my, proj, view, viewport)
         hit = self.layout.ray_hit(ray_o, ray_d)
+        if hit and not self._can_interact(hit):
+            hit = None
         if hit:
             if self._selected_slot is hit:
                 self._selected_slot = None
@@ -202,11 +229,15 @@ class ViewBoard:
         return _BORDER.get(slot.key.owner, glm.vec4(0.6, 0.6, 0.6, 0.7))
 
     def _render_cards(self, proj: glm.mat4, view: glm.mat4) -> None:
-        glEnable(GL_BLEND)
-        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+        if not self.view_cards:
+            return
+        prog = self.renderer.use("objects_board")
+        glUniformMatrix4fv(glGetUniformLocation(prog, "projection"),
+                           1, GL_FALSE, glm.value_ptr(proj))
+        glUniformMatrix4fv(glGetUniformLocation(prog, "camera"),
+                           1, GL_FALSE, glm.value_ptr(view))
         for vc in self.view_cards.values():
-            vc.draw("objects_card", proj)
-            self.renderer.use("objects_board")
+            vc.draw_3d(prog, proj=proj, view=view)
 
 
 def unproject_ray(

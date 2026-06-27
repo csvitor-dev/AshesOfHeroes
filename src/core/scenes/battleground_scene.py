@@ -34,6 +34,7 @@ class BattlegroundScene(Scene):
             animation_queue=self._animation_queue,
             textures=TextureManager(),
             game_state=self._game_state,
+            camera=self._camera,
         )
         self._board.load_assets()
 

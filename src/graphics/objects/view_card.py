@@ -7,16 +7,17 @@ from src.graphics.primitives.entity_3d import Entity3D
 from src.graphics.texture_manager import TextureManager
 from src.graphics.rendering.renderer import Renderer
 from src.graphics.vertex import VertexLayout, VertexAttribute
+from src.graphics.objects.view_inventory import SLOT_W, SLOT_H
 
 
-_LAYOUT_2D = VertexLayout([
-    VertexAttribute("position", GL_FLOAT, 2),
+_LAYOUT_CARD = VertexLayout([
+    VertexAttribute("position", GL_FLOAT, 3),
     VertexAttribute("uv",       GL_FLOAT, 2),
 ])
 _QUAD_IDX = np.array([0, 1, 2, 2, 3, 0], dtype=np.uint32)
 
-CARD_W_3D = 0.70
-CARD_D_3D = 1.00
+CARD_W_3D = 1.04
+CARD_D_3D = 1.44
 CARD_H_3D = 0.005
 
 
@@ -44,9 +45,12 @@ class ViewCard(Entity3D):
 
         self._vao_3d: int = 0
         self._vbo_3d: int = 0
-        self._vao_2d: str = f"card2d_{id(self)}"
+        self._vao_2d:   str = f"card2d_{id(self)}"
+        self._vao_face: str = f"card_face_{id(self)}"
+        self.face_flip: float = 0.0   # 0.0 = BLUE side, 1.0 = RED side
 
         self._build_3d()
+        self._build_face()
         self._build_2d()
 
     def _build_3d(self) -> None:
@@ -103,16 +107,29 @@ class ViewCard(Entity3D):
         glBindVertexArray(0)
         self._vbo_3d = vbo
 
+    def _build_face(self) -> None:
+        hw = CARD_W_3D / 2
+        hd = CARD_D_3D / 2
+        z = CARD_H_3D + 0.001
+        # UV(0,0) = image top (PIL row-0 → GL bottom, i.e. image top without flip).
+        # Far edge (+hd, toward opponent) gets V=0 so the card reads head-up from above.
+        verts = np.array([
+            -hw, -hd, z,  0.0, 1.0,
+             hw, -hd, z,  1.0, 1.0,
+             hw,  hd, z,  1.0, 0.0,
+            -hw,  hd, z,  0.0, 0.0,
+        ], dtype=np.float32)
+        self._renderer.upload(self._vao_face, verts, _LAYOUT_CARD, _QUAD_IDX)
+
     def _build_2d(self) -> None:
-        from src.graphics.objects.view_inventory import SLOT_W, SLOT_H
         w, h = SLOT_W - 8, SLOT_H - 8
         verts = np.array([
-            0, 0, 0.0, 0.0,
-            w, 0, 1.0, 0.0,
-            w, h, 1.0, 1.0,
-            0, h, 0.0, 1.0,
+            0, 0, 0,  0.0, 0.0,
+            w, 0, 0,  1.0, 0.0,
+            w, h, 0,  1.0, 1.0,
+            0, h, 0,  0.0, 1.0,
         ], dtype=np.float32)
-        self._renderer.upload(self._vao_2d, verts, _LAYOUT_2D, _QUAD_IDX)
+        self._renderer.upload(self._vao_2d, verts, _LAYOUT_CARD, _QUAD_IDX)
 
     @property
     def pos_2d(self) -> glm.vec2:
@@ -146,7 +163,12 @@ class ViewCard(Entity3D):
     def is_dragging(self) -> bool:
         return self._dragging
 
-    def draw_3d(self, program: int) -> None:
+    def draw_3d(
+        self,
+        program: int,
+        proj: glm.mat4 | None = None,
+        view: glm.mat4 | None = None,
+    ) -> None:
         model = self.model_matrix()
         glUniformMatrix4fv(
             glGetUniformLocation(program, "model"),
@@ -156,19 +178,38 @@ class ViewCard(Entity3D):
         glDrawArrays(GL_TRIANGLES, 0, self._vertex_count_3d)
         glBindVertexArray(0)
 
+        if proj is not None and view is not None:
+            face_prog = self._renderer.use("objects_card")
+            glUniformMatrix4fv(glGetUniformLocation(face_prog, "projection"),
+                               1, GL_FALSE, glm.value_ptr(proj))
+            glUniformMatrix4fv(glGetUniformLocation(face_prog, "camera"),
+                               1, GL_FALSE, glm.value_ptr(view))
+            glUniformMatrix4fv(glGetUniformLocation(face_prog, "model"),
+                               1, GL_FALSE, glm.value_ptr(model))
+            glUniform4f(glGetUniformLocation(face_prog, "color_tint"), 1.0, 1.0, 1.0, 1.0)
+            glUniform1f(glGetUniformLocation(face_prog, "alpha"), 1.0)
+            glUniform1f(glGetUniformLocation(face_prog, "glow"), 0.0)
+            glUniform1f(glGetUniformLocation(face_prog, "face_flip"), self.face_flip)
+            glUniform1i(glGetUniformLocation(face_prog, "u_texture"), 0)
+            self._textures.bind(self.texture_path, slot=0)
+            self._renderer.draw(self._vao_face)
+            glUseProgram(program)
+
     def draw_2d(self, program: int, proj: glm.mat4) -> None:
         model = glm.mat4(1.0)
         model = glm.translate(model, glm.vec3(self._pos_2d, 0.0))
 
         glUniformMatrix4fv(glGetUniformLocation(program, "projection"),
                            1, GL_FALSE, glm.value_ptr(proj))
+        glUniformMatrix4fv(glGetUniformLocation(program, "camera"),
+                           1, GL_FALSE, glm.value_ptr(glm.mat4(1.0)))
         glUniformMatrix4fv(glGetUniformLocation(program, "model"),
                            1, GL_FALSE, glm.value_ptr(model))
 
-        glUniform4f(glGetUniformLocation(
-            program, "color_tint"), 1.0, 1.0, 1.0, 1.0)
+        glUniform4f(glGetUniformLocation(program, "color_tint"), 1.0, 1.0, 1.0, 1.0)
         glUniform1f(glGetUniformLocation(program, "alpha"), 1.0)
         glUniform1f(glGetUniformLocation(program, "glow"),  0.0)
+        glUniform1f(glGetUniformLocation(program, "face_flip"), 0.0)
         glUniform1i(glGetUniformLocation(program, "u_texture"), 0)
 
         self._textures.bind(self.texture_path, slot=0)
@@ -179,3 +220,4 @@ class ViewCard(Entity3D):
             glDeleteVertexArrays(1, [self._vao_3d])
             glDeleteBuffers(1, [self._vbo_3d])
         self._renderer.delete(self._vao_2d)
+        self._renderer.delete(self._vao_face)

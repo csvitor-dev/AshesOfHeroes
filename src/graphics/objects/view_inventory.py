@@ -1,4 +1,4 @@
-from typing import Optional, Any
+from typing import Callable, Optional, Any
 import numpy as np
 from OpenGL.GL import *
 from pyglm import glm
@@ -18,7 +18,7 @@ _IDX = np.array([0, 1, 2, 2, 3, 0], dtype=np.uint32)
 
 W, H = 1280, 720
 SLOT_W = 90.0
-SLOT_H = 90.0
+SLOT_H = 125.0
 SLOT_COUNT = 5
 SLOT_GAP = 10.0
 ORIGIN_X = (W - (SLOT_COUNT * SLOT_W + (SLOT_COUNT - 1) * SLOT_GAP)) / 2
@@ -152,6 +152,7 @@ class ViewInventory:
         proj: glm.mat4, view: glm.mat4,
         viewport: tuple[float, float, float, float],
         board_layout: BoardLayout,
+        can_interact: Callable | None = None,
     ) -> None:
         if not self._dragging_card:
             return
@@ -162,13 +163,17 @@ class ViewInventory:
         ray_o, ray_d = unproject_ray(mx, my, proj, view, viewport)
         slot_3d = board_layout.ray_hit(ray_o, ray_d)
 
+        if slot_3d and can_interact and not can_interact(slot_3d):
+            slot_3d = None
+
         if slot_3d and slot_3d.card is None:
-            self._events.emit(Events.CARD_PLACED, data={
-                "card_id":  self._dragging_card.card_id,
-                "slot_key": slot_3d.key,
-                "texture":  self._dragging_card.texture_path,
-                "card":     self._dragging_card,
-            })
+            self._events.emit(
+                Events.CARD_PLACED,
+                card_id=self._dragging_card.card_id,
+                slot_key=slot_3d.key,
+                texture=self._dragging_card.texture_path,
+                card=self._dragging_card,
+            )
             if self._dragging_from:
                 self._dragging_from.card = None
         else:
