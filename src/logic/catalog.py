@@ -28,59 +28,99 @@ class CardDef:
 CARD_DEFS: list[CardDef] = [
     CardDef(
         id=0,
-        name="Miktraak, o Hemomante",
-        description="Combatente resistente que absorve dano pelos aliados.",
-        texture="assets/cards/heroes/hero_1.png",
-        card_class=CardClass.HERO,
-        gold_cost=3, gold_profit=5,
-        hp=80, attack=25, armor=5,
+        name="Torre de Guarda",
+        description="Estrutura sólida que ancora a linha de frente.",
+        texture="assets/cards/turrets/turret_1.png",
+        card_class=CardClass.TURRET,
+        gold_cost=0, gold_profit=5,
+        hp=150, attack=15, armor=8,
     ),
     CardDef(
         id=1,
-        name="Arqueiro",
-        description="Ataca à distância com precisão mortal.",
-        texture="assets/cards/heroes/hero_2.png",
-        card_class=CardClass.MINION,
-        gold_cost=3, gold_profit=8,
-        hp=60, attack=35, armor=2,
+        name="Miktraak, o Hemomante",
+        description="Sacerdote de sangue que drena a vida dos inimigos para curar aliados.",
+        texture="assets/cards/heroes/hero_1.png",
+        card_class=CardClass.HERO,
+        gold_cost=4, gold_profit=8,
+        hp=90, attack=30, armor=5,
     ),
     CardDef(
         id=2,
-        name="Escudeiro",
-        description="Alta armadura — ideal para proteger a linha de frente.",
-        texture="assets/cards/heroes/hero_3.png",
-        card_class=CardClass.MINION,
-        gold_cost=4, gold_profit=6,
-        hp=120, attack=15, armor=15,
+        name="Seraphel, a Guardiana",
+        description="Paladina que ergue escudos sagrados e resiste aos golpes mais pesados.",
+        texture="assets/cards/heroes/hero_2.png",
+        card_class=CardClass.HERO,
+        gold_cost=5, gold_profit=7,
+        hp=130, attack=20, armor=20,
     ),
     CardDef(
         id=3,
-        name="Mago",
-        description="Causa dano mágico devastador, mas é frágil ao combate físico.",
-        texture="assets/cards/heroes/hero_4.png",
-        card_class=CardClass.MINION,
-        gold_cost=5, gold_profit=10,
-        hp=50, attack=0, armor=0,
-        magic_damage=45,
+        name="Vorgath, o Destruidor",
+        description="Bárbaro implacável que esmaga armaduras com golpes brutais.",
+        texture="assets/cards/heroes/hero_3.png",
+        card_class=CardClass.HERO,
+        gold_cost=4, gold_profit=9,
+        hp=80, attack=50, armor=0,
     ),
     CardDef(
         id=4,
-        name="Berserker",
-        description="Fúria pura: alto ataque sem nenhuma defesa.",
-        texture="assets/cards/heroes/hero_5.png",
+        name="Lyra, a Encantadora",
+        description="Maga arcana cujas magias ignoram resistências físicas.",
+        texture="assets/cards/heroes/hero_4.png",
+        card_class=CardClass.HERO,
+        gold_cost=5, gold_profit=10,
+        hp=60, attack=0, armor=0,
+        magic_damage=55,
+    ),
+    CardDef(
+        id=5,
+        name="Servo do Caos",
+        description="Criatura instável — perigosa tanto para amigos quanto para inimigos.",
+        texture="assets/cards/minions/minion_1.png",
         card_class=CardClass.MINION,
-        gold_cost=4, gold_profit=7,
-        hp=70, attack=40, armor=0,
+        gold_cost=2, gold_profit=4,
+        hp=50, attack=35, armor=0,
+    ),
+    CardDef(
+        id=6,
+        name="Lâmina Sombria",
+        description="Assassina veloz que ataca antes do inimigo reagir.",
+        texture="assets/cards/minions/minion_2.png",
+        card_class=CardClass.MINION,
+        gold_cost=3, gold_profit=6,
+        hp=45, attack=40, armor=2,
+    ),
+    CardDef(
+        id=7,
+        name="Bola de Fogo",
+        description="Projétil flamejante que causa dano em área.",
+        texture="assets/cards/spells/fireball.png",
+        card_class=CardClass.SPELL,
+        gold_cost=3, gold_profit=0,
+        hp=1, attack=60, armor=0,
+        magic_damage=60,
+    ),
+    CardDef(
+        id=8,
+        name="Relâmpago Glacial",
+        description="Congela e destrói um alvo com precisão absoluta.",
+        texture="assets/cards/spells/glacial_lightning.png",
+        card_class=CardClass.SPELL,
+        gold_cost=4, gold_profit=0,
+        hp=1, attack=0, armor=0,
+        magic_damage=80,
     ),
 ]
 
+_BY_ID: dict[int, CardDef] = {d.id: d for d in CARD_DEFS}
+
+DECK_BLUE_IDS: list[int] = [0, 1, 2, 5, 7]
+DECK_RED_IDS:  list[int] = [0, 3, 4, 6, 8]
+
 
 def texture_for_id(card_id: int) -> str:
-    base_id = card_id % 100
-    for d in CARD_DEFS:
-        if d.id == base_id:
-            return d.texture
-    return "assets/cards/heroes/hero_1.png"
+    d = _BY_ID.get(card_id % 100)
+    return d.texture if d else "assets/cards/heroes/hero_1.png"
 
 
 def _make_card(d: CardDef, id_offset: int):
@@ -115,5 +155,9 @@ def _make_card(d: CardDef, id_offset: int):
     )
 
 
-def make_deck(id_offset: int = 0) -> CardDeck:
-    return CardDeck(deque(_make_card(d, id_offset) for d in CARD_DEFS))
+def make_blue_deck() -> CardDeck:
+    return CardDeck(deque(_make_card(_BY_ID[i], 0)   for i in DECK_BLUE_IDS))
+
+
+def make_red_deck() -> CardDeck:
+    return CardDeck(deque(_make_card(_BY_ID[i], 100) for i in DECK_RED_IDS))

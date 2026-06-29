@@ -10,7 +10,7 @@ from src.graphics.texture_manager import TextureManager
 from src.graphics.rendering.battleground_renderer import BattlegroundRenderer
 from src.logic.game_state import GameState
 from src.mechanics.match_logic import MatchLogic
-from src.logic.catalog import make_deck
+from src.logic.catalog import make_blue_deck, make_red_deck
 from lib.events import Events
 from lib.types import GameSide
 
@@ -48,8 +48,8 @@ class BattlegroundScene(Scene):
         self._events.subscribe(Events.MATCH_ENDED,  self._on_match_ended)
 
         self._match_logic.setup_match(
-            blue_deck=make_deck(id_offset=0),
-            red_deck=make_deck(id_offset=100),
+            blue_deck=make_blue_deck(),
+            red_deck=make_red_deck(),
         )
         self._match_logic.start_game()
 
