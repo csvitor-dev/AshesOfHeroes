@@ -2,7 +2,7 @@ import math
 import os
 from OpenGL.GL import *
 from pyglm import glm
-from typing import Any
+from typing import Any, Callable
 
 from src.core.event import EventManager
 from src.graphics.camera import Camera
@@ -43,12 +43,14 @@ class ViewDeck:
         event_manager: EventManager,
         textures:      TextureManager,
         camera:        Camera,
+        can_act:       Callable[[GameSide], bool] | None = None,
     ):
 
         self._renderer = renderer
         self._textures = textures
         self._events = event_manager
         self._camera = camera
+        self._can_act = can_act or (lambda _side: True)
 
         self._stack_blue: CardStack | None = None
         self._stack_red:  CardStack | None = None
@@ -186,14 +188,14 @@ class ViewDeck:
             return True
 
         if self._stack_blue and self._hit_top_card(ray_o, ray_d, self._stack_blue):
-            if self._camera.current_perspective == GameSide.BLUE:
+            if self._camera.current_perspective == GameSide.BLUE and self._can_act(GameSide.BLUE):
                 card = self._stack_blue.pop_card()
                 if card:
                     self._events.emit(Events.CARD_DRAWN, card=card, card_id=card.card_id, side=GameSide.BLUE)
             return True
 
         if self._stack_red and self._hit_top_card(ray_o, ray_d, self._stack_red):
-            if self._camera.current_perspective == GameSide.RED:
+            if self._camera.current_perspective == GameSide.RED and self._can_act(GameSide.RED):
                 card = self._stack_red.pop_card()
                 if card:
                     self._events.emit(Events.CARD_DRAWN, card=card, card_id=card.card_id, side=GameSide.RED)

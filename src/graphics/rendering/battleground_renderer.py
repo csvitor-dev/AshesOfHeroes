@@ -4,6 +4,7 @@ from pyglm import glm
 from src.core.event import EventManager
 from src.core.animation import AnimationQueue
 from src.graphics.camera import Camera
+from src.graphics.slots import BattleSlot
 from src.graphics.texture_manager import TextureManager
 from src.graphics.rendering.renderer import Renderer
 from src.graphics.objects.view_board import ViewBoard
@@ -12,6 +13,7 @@ from src.graphics.objects.view_deck import ViewDeck
 from src.graphics.objects.view_hud import ViewHud
 from src.graphics.objects.view_inventory import ViewInventory
 from src.logic.game_state import GameState
+from lib.types import GameSide
 
 
 class BattlegroundRenderer:
@@ -29,11 +31,15 @@ class BattlegroundRenderer:
 
         self._renderer = renderer
         self._game_state = game_state
+        self._camera = camera
 
         self._view_aegis = ViewAegis(renderer)
         self._view_board = ViewBoard(
             event_manager, animation_queue, renderer, textures, camera)
-        self._view_deck = ViewDeck(renderer, event_manager, textures, camera)
+        self._view_deck = ViewDeck(
+            renderer, event_manager, textures, camera,
+            can_act=game_state.can_act,
+        )
         self._view_hud = ViewHud(renderer)
         self._view_hand = ViewInventory(event_manager, renderer, textures)
 
@@ -104,12 +110,21 @@ class BattlegroundRenderer:
         self._view_hand.on_mouse_press(mx, my)
 
     def on_mouse_release(self, mx: float, my: float) -> None:
-        if self.__proj3d and self.__view:
-            self._view_hand.on_mouse_release(
-                mx, my,
-                proj=self.__proj3d,
-                view=self.__view,
-                viewport=(0, 0, 1280, 720),
-                board_layout=self._view_board.layout,
-                can_interact=self._view_board._can_interact,
-            )
+        if not (self.__proj3d and self.__view):
+            return
+
+        state = self._game_state
+        camera_side = self._camera.current_perspective
+        can_place = state.can_act(camera_side)
+
+        def _can_interact(slot: BattleSlot) -> bool:
+            return can_place and self._view_board._can_interact(slot)
+
+        self._view_hand.on_mouse_release(
+            mx, my,
+            proj=self.__proj3d,
+            view=self.__view,
+            viewport=(0, 0, 1280, 720),
+            board_layout=self._view_board.layout,
+            can_interact=_can_interact,
+        )

@@ -91,6 +91,25 @@ class ViewHud:
                 scale=1.0,
                 anchor_x="left",
             )
+            self._font.draw(
+                text=f"Essencias: {current_player.essences}",
+                x=980,
+                y=622,
+                color=glm.vec4(0.60, 0.85, 1.00, 0.9),
+                projection=proj,
+                scale=1.0,
+                anchor_x="left",
+            )
+            side_name = state.current_side.name
+            self._font.draw(
+                text=f"Turno: {side_name}  R{state.round_number}",
+                x=700,
+                y=605,
+                color=glm.vec4(0.70, 0.70, 0.75, 0.75),
+                projection=proj,
+                scale=1.0,
+                anchor_x="left",
+            )
 
 
 def _up_proj(prog: int, proj: glm.mat4x4) -> None:
