@@ -1,8 +1,9 @@
-from lib.types import GameSide
+from lib.types import GameSide, SlotOwner
 from lib.events import Events
 from src.core.event import EventManager
 from src.logic.game_state import GameState
 from src.logic.card_deck import CardDeck
+from src.logic.contracts.card import Card
 from src.logic.economy import Economy
 from src.logic.turn_machine import TurnMachine
 from src.logic.combat_resolver import CombatResolver
@@ -19,6 +20,7 @@ class MatchLogic:
         self.__economy = Economy(event_manager)
         self.__turn = TurnMachine(game_state, self.__economy, event_manager)
         self.__resolver = CombatResolver(game_state.board, self.__economy, event_manager)
+        self.__hand: dict[str, Card] = {}
         self.__is_active = False
 
         game_state.bind_turn_machine(self.__turn)
@@ -30,7 +32,7 @@ class MatchLogic:
     def start_game(self) -> None:
         self.__is_active = True
         self.__events.subscribe(Events.TURN_END_REQUESTED, self._on_turn_end_requested)
-        self.__events.subscribe(Events.CARD_DRAWN, self._on_card_drawn)
+        self.__events.subscribe(Events.CARD_DRAWN,  self._on_card_drawn)
         self.__events.subscribe(Events.CARD_PLACED, self._on_card_placed)
         self.__turn.start_match()
 
@@ -38,39 +40,47 @@ class MatchLogic:
         self.__turn.request_end_turn(self.__state.current_side)
 
     def _on_card_drawn(self, data: dict) -> None:
-        """
-        Graphics layer emits CARD_DRAWN when the player clicks their deck.
-        Round 1 (gold == 0): costs 1 essence; card goes directly to hand (ViewInventory handles it).
-        Round 2+: costs 1 essence; card goes to staging.
-        """
-        card = data.get("card")
-        if card is None or not self.__is_active:
-            return
-        side = self.__state.current_side
-        if not self.__state.can_act(side):
+        card_id: str | None = data.get("card_id")
+        side: GameSide | None = data.get("side")
+        if card_id is None or side is None or not self.__is_active:
             return
 
-        aegis = self.__state.aegis(side)
-        if not self.__turn.request_action(side):
+        deck = self.__state.board.deck_for(side)
+        if deck is None or deck.is_empty:
             return
 
-        if self.__state.round_number > 1:
-            stage = self.__state.stage
-            idx = stage.add(side, card)
-            if idx is not None:
-                self.__events.emit(
-                    Events.STAGING_CARD_ADDED,
-                    side=side,
-                    slot_index=idx,
-                    card=card,
-                )
+        logic_card = deck.draw_card()
+        self.__hand[card_id] = logic_card
+        self.__turn.request_action(side)
 
     def _on_card_placed(self, data: dict) -> None:
-        """Card drag-dropped onto board — consume 1 essence in the logic layer."""
-        if not self.__is_active:
+        card_id: str | None = data.get("card_id")
+        slot_key = data.get("slot_key")
+        if card_id is None or slot_key is None or not self.__is_active:
             return
-        side = self.__state.current_side
-        self.__turn.request_action(side)
+
+        logic_card = self.__hand.pop(card_id, None)
+        if logic_card is None:
+            return
+
+        side = GameSide.BLUE if slot_key.owner == SlotOwner.PLAYER else GameSide.RED
+        col: int = slot_key.col
+        board = self.__state.board
+
+        try:
+            if logic_card.is_turret():
+                if side == GameSide.BLUE:
+                    board.place_turret_card_on_blue_side(logic_card, col + 2)
+                else:
+                    board.place_turret_card_on_red_side(logic_card, col)
+            else:
+                if side == GameSide.BLUE:
+                    board.place_card_on_blue_side(logic_card, col)
+                else:
+                    board.place_card_on_red_side(logic_card, col)
+            self.__turn.request_action(side)
+        except ValueError:
+            self.__hand[card_id] = logic_card
 
     def execute_attack(
         self,
@@ -101,18 +111,13 @@ class MatchLogic:
             card = stage.get(side)[slot_index].card
             self.__events.emit(
                 Events.STAGING_CARD_REVEALED,
-                side=side,
-                slot_index=slot_index,
-                card=card,
+                side=side, slot_index=slot_index, card=card,
             )
             return True
         return False
 
     def buy_staging_card(
-        self,
-        buyer_side: GameSide,
-        owner_side: GameSide,
-        slot_index: int,
+        self, buyer_side: GameSide, owner_side: GameSide, slot_index: int,
     ) -> bool:
         return self.__economy.try_buy_from_staging(
             self.__state.aegis(buyer_side),

@@ -108,6 +108,9 @@ class Board:
         turret_range = range(0, 2) if side == GameSide.RED else range(2, 4)
         return sum(1 for i in turret_range if self.__turrets[i].occupied)
 
+    def deck_for(self, side: GameSide) -> Optional[CardDeck]:
+        return self.__blue_deck if side == GameSide.BLUE else self.__red_deck
+
     def remove_turret(self, side: GameSide, turret_index: int) -> Optional[Card]:
         expected = range(0, 2) if side == GameSide.RED else range(2, 4)
         if turret_index not in expected:

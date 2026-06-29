@@ -9,6 +9,8 @@ from src.graphics.rendering.renderer import Renderer
 from src.graphics.texture_manager import TextureManager
 from src.graphics.rendering.battleground_renderer import BattlegroundRenderer
 from src.logic.game_state import GameState
+from src.mechanics.match_logic import MatchLogic
+from src.logic.catalog import make_deck
 
 
 class BattlegroundScene(Scene):
@@ -19,10 +21,12 @@ class BattlegroundScene(Scene):
         camera:        Camera,
         renderer:      Renderer,
         game_state:    GameState,
+        match_logic:   MatchLogic,
     ):
         super().__init__(event_manager, scene_manager, camera)
         self._renderer = renderer
         self._game_state = game_state
+        self._match_logic = match_logic
         self._animation_queue: AnimationQueue | None = None
         self._board: BattlegroundRenderer | None = None
 
@@ -38,6 +42,12 @@ class BattlegroundScene(Scene):
         )
         self._board.load_assets()
 
+        self._match_logic.setup_match(
+            blue_deck=make_deck(id_offset=0),
+            red_deck=make_deck(id_offset=100),
+        )
+        self._match_logic.start_game()
+
     def on_exit(self) -> None:
         if self._board:
             self._board.unload_assets()
@@ -51,13 +61,11 @@ class BattlegroundScene(Scene):
     def update(self, dt: float) -> None:
         if self._animation_queue:
             self._animation_queue.update(dt)
-
         if self._board:
             self._board.update(dt)
 
     def render(self) -> None:
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
-
         if self._board:
             self._board.render(
                 proj3d=self._camera.projection(),
@@ -82,7 +90,6 @@ class BattlegroundScene(Scene):
     def on_mouse_press(self, mx: float, my: float) -> None:
         if self._board:
             self._board.on_mouse_press(mx, my)
-
 
     def on_mouse_release(self, mx: float, my: float) -> None:
         if self._board:

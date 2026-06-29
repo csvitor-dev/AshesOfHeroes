@@ -189,14 +189,14 @@ class ViewDeck:
             if self._camera.current_perspective == GameSide.BLUE:
                 card = self._stack_blue.pop_card()
                 if card:
-                    self._events.emit(Events.CARD_DRAWN, card=card)
+                    self._events.emit(Events.CARD_DRAWN, card=card, card_id=card.card_id, side=GameSide.BLUE)
             return True
 
         if self._stack_red and self._hit_top_card(ray_o, ray_d, self._stack_red):
             if self._camera.current_perspective == GameSide.RED:
                 card = self._stack_red.pop_card()
                 if card:
-                    self._events.emit(Events.CARD_DRAWN, card=card)
+                    self._events.emit(Events.CARD_DRAWN, card=card, card_id=card.card_id, side=GameSide.RED)
             return True
 
         return False
