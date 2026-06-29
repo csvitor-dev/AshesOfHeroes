@@ -18,13 +18,49 @@ class TurretCard(Card):
         turn_cooldown: int,
     ) -> None:
         super().__init__(
-            id,
-            name,
-            description,
-            gold_cost,
-            gold_profit,
-            CardClass.TURRET,
-            effects
+            id, name, description, gold_cost, gold_profit,
+            CardClass.TURRET, effects,
         )
-        self.__attributes = attributes
+        self.__attr = attributes
         self.__turn_cooldown = turn_cooldown
+        self.__has_attacked = False
+
+    # --- EntityCard protocol ---
+
+    def attack(self, target: "TurretCard") -> None:
+        if not self.can_attack:
+            return
+        target.take_damage(self.__attr.attack_damage)
+        self.__has_attacked = True
+
+    def take_damage(self, amount: int) -> int:
+        effective = max(0, amount - self.__attr.armor)
+        self.__attr.health = max(0, self.__attr.health - effective)
+        return self.__attr.health
+
+    def heal(self, amount: int) -> int:
+        self.__attr.health = min(self.__attr.health + amount, self.__attr.health)
+        return self.__attr.health
+
+    def reset_turn_state(self) -> None:
+        self.__has_attacked = False
+
+    @property
+    def can_attack(self) -> bool:
+        return not self.__has_attacked and self.is_alive
+
+    @property
+    def has_attacked(self) -> bool:
+        return self.__has_attacked
+
+    @property
+    def is_alive(self) -> bool:
+        return self.__attr.health > 0
+
+    @property
+    def attack_damage(self) -> int:
+        return self.__attr.attack_damage
+
+    @property
+    def gold_profit(self) -> int:
+        return self._gold_profit

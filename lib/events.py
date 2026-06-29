@@ -26,4 +26,19 @@ class Events(Enum):
 
     TURN_CHANGED = auto()
     TURN_STARTED = auto()
+    TURN_ENDED = auto()
     TURN_END_REQUESTED = auto()
+    ROUND_STARTED = auto()
+    ACTION_TAKEN = auto()
+
+    GOLD_CHANGED = auto()
+    ESSENCE_CHANGED = auto()
+
+    STAGING_CARD_ADDED = auto()
+    STAGING_CARD_REVEALED = auto()
+    STAGING_CARD_BOUGHT = auto()
+
+    CARD_ATTACKED = auto()
+    AEGIS_ATTACKED = auto()
+
+    MATCH_ENDED = auto()

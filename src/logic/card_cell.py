@@ -13,5 +13,9 @@ class CardCell:
         self.__card = None
 
     @property
+    def card(self) -> Optional[Card]:
+        return self.__card
+
+    @property
     def occupied(self) -> bool:
         return self.__card is not None
