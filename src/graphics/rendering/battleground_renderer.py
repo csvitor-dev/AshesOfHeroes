@@ -41,7 +41,8 @@ class BattlegroundRenderer:
             can_act=game_state.can_act,
         )
         self._view_hud = ViewHud(renderer)
-        self._view_hand = ViewInventory(event_manager, renderer, textures)
+        self._view_hand_blue = ViewInventory(event_manager, renderer, textures, GameSide.BLUE)
+        self._view_hand_red  = ViewInventory(event_manager, renderer, textures, GameSide.RED)
 
     def load_assets(self) -> None:
         self._renderer.load_program("scenes", "battleground")
@@ -50,18 +51,26 @@ class BattlegroundRenderer:
         self._view_board.load_assets()
         self._view_deck.load_assets()
         self._view_hud.load_assets()
-        self._view_hand.load_assets()
+        self._view_hand_blue.load_assets()
+        self._view_hand_red.load_assets()
 
     def unload_assets(self) -> None:
         self._view_aegis.unload_assets()
         self._view_board.unload_assets()
         self._view_deck.unload_assets()
         self._view_hud.unload_assets()
-        self._view_hand.unload_assets()
+        self._view_hand_blue.unload_assets()
+        self._view_hand_red.unload_assets()
+
+    def _active_hand(self) -> ViewInventory:
+        return (self._view_hand_blue
+                if self._camera.current_perspective == GameSide.BLUE
+                else self._view_hand_red)
 
     def update(self, dt: float) -> None:
         self._view_board.update(dt)
-        self._view_hand.update(dt)
+        self._view_hand_blue.update(dt)
+        self._view_hand_red.update(dt)
 
     def render(self, proj3d: glm.mat4, view: glm.mat4, proj2d: glm.mat4) -> None:
         self.__proj3d = proj3d
@@ -82,7 +91,9 @@ class BattlegroundRenderer:
         glDisable(GL_DEPTH_TEST)
         glEnable(GL_BLEND)
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
-        self._view_hand.render(proj, self._game_state)
+        cam = self._camera.current_perspective
+        self._view_hand_blue.render(proj, self._game_state, cam)
+        self._view_hand_red.render(proj, self._game_state, cam)
 
     def _render_hud(self, proj: glm.mat4) -> None:
         self._view_hud.render(proj, self._game_state, self._camera.current_perspective)
@@ -94,7 +105,7 @@ class BattlegroundRenderer:
                 mx, my, self.__proj3d, self.__view, vp)
             self._view_deck.on_mouse_move(
                 mx, my, self.__proj3d, self.__view, vp)
-        self._view_hand.on_mouse_move(mx, my)
+        self._active_hand().on_mouse_move(mx, my)
 
     def on_mouse_click(self, mx: float, my: float) -> None:
         if self.__proj3d and self.__view:
@@ -104,10 +115,10 @@ class BattlegroundRenderer:
             if not btn_hit:
                 self._view_board.on_mouse_click(
                     mx, my, self.__proj3d, self.__view, vp)
-        self._view_hand.on_mouse_click(mx, my)
+        self._active_hand().on_mouse_click(mx, my)
 
     def on_mouse_press(self, mx: float, my: float) -> None:
-        self._view_hand.on_mouse_press(mx, my)
+        self._active_hand().on_mouse_press(mx, my)
 
     def on_mouse_release(self, mx: float, my: float) -> None:
         if not (self.__proj3d and self.__view):
@@ -120,7 +131,7 @@ class BattlegroundRenderer:
         def _can_interact(slot: BattleSlot) -> bool:
             return can_place and self._view_board._can_interact(slot)
 
-        self._view_hand.on_mouse_release(
+        self._active_hand().on_mouse_release(
             mx, my,
             proj=self.__proj3d,
             view=self.__view,

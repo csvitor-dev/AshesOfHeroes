@@ -15,21 +15,13 @@ _IDX    = np.array([0, 1, 2, 2, 3, 0], dtype=np.uint32)
 W, H = 1280, 720
 _BAR_W, _BAR_H = 200, 10
 
-# Glyph ascender for CinzelDecorative at 22px is ~16px above baseline.
-# Rule: gap between any text bottom and next element top >= 6px.
+_ALLY_BAR_X,  _ALLY_BAR_Y  = 460, 688
+_ALLY_TEXT_Y, _ALLY_TURN_Y = 672, 715
 
-# Allied panel anchors (bottom of screen)
-#   stats text baseline 650 → glyphs 634–650
-#   bar 666–676  (gap above bar: 666-650 = 16px)
-#   turn text baseline 698 (scale 0.85 → ascender ≈14px → top 684)  (gap below bar: 684-676 = 8px)
-_ALLY_BAR_X,  _ALLY_BAR_Y  = 460, 666
-_ALLY_TEXT_Y, _ALLY_TURN_Y = 650, 698
-
-# Enemy panel anchors (top of screen)
-#   bar 38–48
-#   stats text baseline 72 → glyph top 56  (gap below bar: 56-48 = 8px)
 _ENEMY_BAR_X, _ENEMY_BAR_Y = 460, 38
 _ENEMY_TEXT_Y               = 72
+
+_ROUND_X, _ROUND_Y = W - 12, 22
 
 _SIDE_COLOR = {
     GameSide.BLUE: glm.vec4(0.40, 0.65, 1.00, 1.0),
@@ -98,11 +90,9 @@ class ViewHud:
                              _SIDE_COLOR[enemy_side].y,
                              _SIDE_COLOR[enemy_side].z, 0.70)
 
-        # Bottom: allied stats
         self._draw_stats(proj, ally, camera_side.name,
                          _ALLY_BAR_X, _ALLY_TEXT_Y, ally_col)
 
-        # Bottom: turn indicator
         if is_my_turn:
             turn_text  = f"SEU TURNO  |  Rodada {state.round_number}"
             turn_color = glm.vec4(0.95, 0.85, 0.30, 1.0)
@@ -115,11 +105,16 @@ class ViewHud:
             scale=0.85, anchor_x="center",
         )
 
-        # Top: enemy stats (dimmed)
         self._draw_stats(proj, enemy, enemy_side.name,
                          _ENEMY_BAR_X, _ENEMY_TEXT_Y, enemy_col)
 
-    # ------------------------------------------------------------------
+        self._font.draw(
+            text=f"Rodada {state.round_number}",
+            x=_ROUND_X, y=_ROUND_Y,
+            color=glm.vec4(0.80, 0.80, 0.85, 0.80),
+            projection=proj,
+            scale=1.0, anchor_x="right",
+        )
 
     def _draw_bar(
         self, prog: int, aegis: HeroesAegis,
@@ -161,7 +156,6 @@ class ViewHud:
         )
 
 
-# -------------------------------------------------------------------------
 
 def _bar_quad(x: float, y: float, w: float, h: float) -> np.ndarray:
     return np.array([x, y, x + w, y, x + w, y + h, x, y + h], dtype=np.float32)

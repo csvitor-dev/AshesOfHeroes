@@ -11,22 +11,23 @@ from src.graphics.texture_manager import TextureManager
 from src.graphics.vertex import VertexLayout, VertexAttribute
 from src.logic.game_state import GameState
 from lib.events import Events
+from lib.types import GameSide
 
 
 _LAYOUT = VertexLayout([VertexAttribute("position", GL_FLOAT, 2)])
 _IDX = np.array([0, 1, 2, 2, 3, 0], dtype=np.uint32)
 
 W, H = 1280, 720
-SLOT_W = 90.0
-SLOT_H = 125.0
+SLOT_W     = 80.0
+SLOT_H     = 110.0
 SLOT_COUNT = 5
-SLOT_GAP = 10.0
-ORIGIN_X = (W - (SLOT_COUNT * SLOT_W + (SLOT_COUNT - 1) * SLOT_GAP)) / 2
-ORIGIN_Y = H - SLOT_H - 20
+SLOT_GAP   = 8.0
+ORIGIN_X   = 8.0
+ORIGIN_Y   = (H - (SLOT_COUNT * SLOT_H + (SLOT_COUNT - 1) * SLOT_GAP)) / 2
 
 
 def _slot_pos(index: int) -> tuple[float, float]:
-    return ORIGIN_X + index * (SLOT_W + SLOT_GAP), ORIGIN_Y
+    return ORIGIN_X, ORIGIN_Y + index * (SLOT_H + SLOT_GAP)
 
 
 class InventorySlot:
@@ -72,15 +73,19 @@ class ViewInventory:
         event_manager: EventManager,
         renderer:      Renderer,
         textures:      TextureManager,
+        side:          GameSide = GameSide.BLUE,
     ):
         self._renderer = renderer
         self._events = event_manager
         self._textures = textures
+        self._side = side
+        self._ns = side.name.lower()          # "blue" or "red" — namespaces buffer keys
         self._slots = [InventorySlot(i) for i in range(SLOT_COUNT)]
         self._selected: Optional[InventorySlot] = None
         self._dragging_card = None
         self._dragging_from: Optional[InventorySlot] = None
         self._font: Optional[FontRenderer] = None
+        self._visible: bool = True
 
     def load_assets(self) -> None:
         self._font = FontRenderer(
@@ -94,8 +99,8 @@ class ViewInventory:
         if self._font:
             self._font.unload()
         for slot in self._slots:
-            self._renderer.delete(f"inv_bg_{slot.index}")
-            self._renderer.delete(f"inv_border_{slot.index}")
+            self._renderer.delete(f"inv_{self._ns}_bg_{slot.index}")
+            self._renderer.delete(f"inv_{self._ns}_border_{slot.index}")
             if slot.card:
                 slot.card.delete()
                 slot.card = None
@@ -104,17 +109,16 @@ class ViewInventory:
 
     def _upload_geometry(self) -> None:
         for slot in self._slots:
-            self._renderer.upload(f"inv_bg_{slot.index}",
+            self._renderer.upload(f"inv_{self._ns}_bg_{slot.index}",
                                   slot.bg_verts(), _LAYOUT, _IDX)
-            self._renderer.upload(f"inv_border_{slot.index}",
+            self._renderer.upload(f"inv_{self._ns}_border_{slot.index}",
                                   slot.border_verts(), _LAYOUT)
 
     def _on_card_drawn(self, data: dict) -> None:
-
+        if data.get("side") != self._side:
+            return
         card = data.get("card")
-
         slot = next((s for s in self._slots if s.card is None), None)
-
         if slot is None or card is None:
             return
         card.pos_2d = glm.vec2(slot.x + 4, slot.y + 4)
@@ -132,6 +136,8 @@ class ViewInventory:
                 break
 
     def on_mouse_move(self, mx: float, my: float) -> None:
+        if not self._visible:
+            return
         if self._dragging_card:
             self._dragging_card.update_drag(mx, my)
             return
@@ -139,6 +145,8 @@ class ViewInventory:
             slot.hovered = slot.contains(mx, my) and slot is not self._selected
 
     def on_mouse_press(self, mx: float, my: float) -> None:
+        if not self._visible:
+            return
         for slot in self._slots:
             if slot.contains(mx, my) and slot.card:
                 self._dragging_card = slot.card
@@ -188,6 +196,8 @@ class ViewInventory:
         self._dragging_from = None
 
     def on_mouse_click(self, mx: float, my: float) -> None:
+        if not self._visible:
+            return
         for slot in self._slots:
             if slot.contains(mx, my):
                 if self._selected is slot:
@@ -205,7 +215,11 @@ class ViewInventory:
             if slot.card and not slot.card.is_dragging:
                 slot.card.update_lerp(dt)
 
-    def render(self, proj: glm.mat4, state: GameState) -> None:
+    def render(self, proj: glm.mat4, state: GameState, camera_side: GameSide) -> None:
+        self._visible = self._side == camera_side == state.current_side
+        if not self._visible:
+            return
+
         glDisable(GL_DEPTH_TEST)
         glEnable(GL_BLEND)
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
@@ -239,7 +253,7 @@ class ViewInventory:
             color = self._COLOR_BG_SLOT
         _up_color(prog, color)
         _up_alpha(prog, color.w)
-        self._renderer.draw(f"inv_bg_{slot.index}")
+        self._renderer.draw(f"inv_{self._ns}_bg_{slot.index}")
 
     def _render_slot_border(self, slot: InventorySlot, prog: int) -> None:
         prog = self._renderer.use("scenes_battleground")   # ← reativa sempre
@@ -252,7 +266,7 @@ class ViewInventory:
         _up_color(prog, color)
         _up_alpha(prog, color.w)
         glBindVertexArray(self._renderer.get_vao_id_by_key(
-            f"inv_border_{slot.index}"))
+            f"inv_{self._ns}_border_{slot.index}"))
         glDrawArrays(GL_LINE_LOOP, 0, 4)
         glBindVertexArray(0)
 
