@@ -36,6 +36,7 @@ class GameState:
         self.__turn = TurnState()
         self.__phase = GamePhase.MULLIGAN
         self.__turn_machine: Optional["TurnMachine"] = None
+        self.__winner_side: Optional[GameSide] = None
 
     def bind_turn_machine(self, machine: "TurnMachine") -> None:
         self.__turn_machine = machine
@@ -73,6 +74,13 @@ class GameState:
     @property
     def is_over(self) -> bool:
         return self.__board.defeated is not None
+
+    @property
+    def winner_side(self) -> Optional[GameSide]:
+        return self.__winner_side
+
+    def set_winner(self, side: GameSide) -> None:
+        self.__winner_side = side
 
     # --- Helpers ---
 

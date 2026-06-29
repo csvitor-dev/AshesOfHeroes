@@ -70,16 +70,18 @@ class ViewInventory:
 
     def __init__(
         self,
-        event_manager: EventManager,
-        renderer:      Renderer,
-        textures:      TextureManager,
-        side:          GameSide = GameSide.BLUE,
+        event_manager:   EventManager,
+        renderer:        Renderer,
+        textures:        TextureManager,
+        side:            GameSide = GameSide.BLUE,
+        round_number_fn: Callable[[], int] | None = None,
     ):
         self._renderer = renderer
         self._events = event_manager
         self._textures = textures
         self._side = side
-        self._ns = side.name.lower()          # "blue" or "red" — namespaces buffer keys
+        self._ns = side.name.lower()
+        self._round_fn = round_number_fn or (lambda: 0)
         self._slots = [InventorySlot(i) for i in range(SLOT_COUNT)]
         self._selected: Optional[InventorySlot] = None
         self._dragging_card = None
@@ -116,6 +118,8 @@ class ViewInventory:
 
     def _on_card_drawn(self, data: dict) -> None:
         if data.get("side") != self._side:
+            return
+        if self._round_fn() == 1:
             return
         card = data.get("card")
         slot = next((s for s in self._slots if s.card is None), None)

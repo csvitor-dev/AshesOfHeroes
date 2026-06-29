@@ -75,6 +75,8 @@ class TurnMachine:
             side=side,
             essences_remaining=aegis.essences,
         )
+        if aegis.essences == 0:
+            self.request_end_turn(side)
         return True
 
     # --- Internal ---

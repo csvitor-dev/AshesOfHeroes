@@ -41,8 +41,14 @@ class BattlegroundRenderer:
             can_act=game_state.can_act,
         )
         self._view_hud = ViewHud(renderer)
-        self._view_hand_blue = ViewInventory(event_manager, renderer, textures, GameSide.BLUE)
-        self._view_hand_red  = ViewInventory(event_manager, renderer, textures, GameSide.RED)
+        self._view_hand_blue = ViewInventory(
+            event_manager, renderer, textures, GameSide.BLUE,
+            round_number_fn=lambda: game_state.round_number,
+        )
+        self._view_hand_red = ViewInventory(
+            event_manager, renderer, textures, GameSide.RED,
+            round_number_fn=lambda: game_state.round_number,
+        )
 
     def load_assets(self) -> None:
         self._renderer.load_program("scenes", "battleground")

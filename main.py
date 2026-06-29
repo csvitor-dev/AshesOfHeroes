@@ -2,6 +2,7 @@ from src.bootstrap.bootstrap import Bootstrap
 from src.bootstrap.engine_builder import EngineBuilder
 from src.core.scenes.menu_scene import MenuScene
 from src.core.scenes.battleground_scene import BattlegroundScene
+from src.core.scenes.game_over_scene import GameOverScene
 from src.graphics.rendering.renderer import Renderer
 from src.graphics.texture_manager import TextureManager
 from src.mechanics.match_logic import MatchLogic
@@ -32,6 +33,13 @@ def main():
             camera=s["camera"],
             game_state=s["game_state"],
             match_logic=s["match_logic"],
+        ))
+        .add_scene("game_over", lambda s: GameOverScene(
+            event_manager=s["events"],
+            scene_manager=s["scenes"],
+            renderer=s["renderer"],
+            camera=s["camera"],
+            game_state=s["game_state"],
         ))
         .set_initial_scene("menu")
     )
