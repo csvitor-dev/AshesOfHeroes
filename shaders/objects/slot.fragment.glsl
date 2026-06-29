@@ -1,4 +1,4 @@
-#version 460
+#version 330 core
 
 uniform vec4  color;
 uniform float alpha;
