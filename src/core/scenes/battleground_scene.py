@@ -11,6 +11,8 @@ from src.graphics.rendering.battleground_renderer import BattlegroundRenderer
 from src.logic.game_state import GameState
 from src.mechanics.match_logic import MatchLogic
 from src.logic.catalog import make_deck
+from lib.events import Events
+from lib.types import GameSide
 
 
 class BattlegroundScene(Scene):
@@ -29,6 +31,7 @@ class BattlegroundScene(Scene):
         self._match_logic = match_logic
         self._animation_queue: AnimationQueue | None = None
         self._board: BattlegroundRenderer | None = None
+        self._winner_side: GameSide | None = None
 
     def on_enter(self, **params: Any) -> None:
         self._animation_queue = AnimationQueue()
@@ -42,6 +45,9 @@ class BattlegroundScene(Scene):
         )
         self._board.load_assets()
 
+        self._events.subscribe(Events.TURN_STARTED, self._on_turn_started)
+        self._events.subscribe(Events.MATCH_ENDED,  self._on_match_ended)
+
         self._match_logic.setup_match(
             blue_deck=make_deck(id_offset=0),
             red_deck=make_deck(id_offset=100),
@@ -49,14 +55,25 @@ class BattlegroundScene(Scene):
         self._match_logic.start_game()
 
     def on_exit(self) -> None:
+        self._events.unsubscribe(Events.TURN_STARTED, self._on_turn_started)
+        self._events.unsubscribe(Events.MATCH_ENDED,  self._on_match_ended)
         if self._board:
             self._board.unload_assets()
             self._board = None
         self._animation_queue = None
+        self._winner_side = None
 
     def on_pause(self) -> None: ...
 
     def on_resume(self) -> None: ...
+
+    def _on_turn_started(self, data: dict) -> None:
+        side: GameSide | None = data.get("side")
+        if side is not None and side != self._camera.current_perspective:
+            self._camera.rotate_perspective()
+
+    def _on_match_ended(self, data: dict) -> None:
+        self._winner_side = data.get("winner_side")
 
     def update(self, dt: float) -> None:
         if self._animation_queue:
@@ -72,6 +89,12 @@ class BattlegroundScene(Scene):
                 view=self._camera.view(),
                 proj2d=self._camera.ortho(),
             )
+            if self._winner_side is not None:
+                self._board.render_match_end(
+                    winner_side=self._winner_side,
+                    camera_side=self._camera.current_perspective,
+                    proj=self._camera.ortho(),
+                )
 
     def handle_input(self) -> None: ...
 

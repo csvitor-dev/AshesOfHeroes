@@ -113,9 +113,13 @@ class BattlegroundRenderer:
             btn_hit = self._view_deck.on_mouse_click(
                 mx, my, self.__proj3d, self.__view, vp)
             if not btn_hit:
+                can_act = self._game_state.can_act(self._camera.current_perspective)
                 self._view_board.on_mouse_click(
-                    mx, my, self.__proj3d, self.__view, vp)
+                    mx, my, self.__proj3d, self.__view, vp, can_act=can_act)
         self._active_hand().on_mouse_click(mx, my)
+
+    def render_match_end(self, winner_side: GameSide, camera_side: GameSide, proj: glm.mat4) -> None:
+        self._view_hud.render_match_end(proj, winner_side == camera_side)
 
     def on_mouse_press(self, mx: float, my: float) -> None:
         self._active_hand().on_mouse_press(mx, my)

@@ -22,8 +22,9 @@ _BORDER = {
     SlotOwner.OPPONENT: glm.vec4(1.00, 0.30, 0.30, 0.85),
     SlotOwner.NEUTRAL:  glm.vec4(0.30, 0.80, 0.40, 0.85),
 }
-_BORDER_HOVER = glm.vec4(1.00, 1.00, 0.40, 1.00)
+_BORDER_HOVER    = glm.vec4(1.00, 1.00, 0.40, 1.00)
 _BORDER_SELECTED = glm.vec4(1.00, 0.85, 0.10, 1.00)
+_BORDER_ATTACKER = glm.vec4(1.00, 0.55, 0.00, 1.00)
 
 _LAYOUT_3D = VertexLayout([VertexAttribute("position", GL_FLOAT, 3)])
 
@@ -46,6 +47,7 @@ class ViewBoard:
 
         self._hovered_slot:  BattleSlot | None = None
         self._selected_slot: BattleSlot | None = None
+        self._attacker_slot: BattleSlot | None = None
         self.view_cards:     dict[Any, ViewCard] = {}
 
         self.events.subscribe(Events.LOGIC_COMBAT_RESOLVED,
@@ -147,6 +149,10 @@ class ViewBoard:
     def _on_card_removed(self, data: Any) -> None:
         vis = self.view_cards.pop(data["card_id"], None)
         if vis:
+            for s in self.layout.all_slots():
+                if s.card is vis:
+                    s.card = None
+                    s.attack_selected = False
             vis.delete()
 
     def _can_interact(self, slot: BattleSlot) -> bool:
@@ -167,11 +173,44 @@ class ViewBoard:
 
     def on_mouse_click(self, mx: float, my: float,
                        proj: glm.mat4, view: glm.mat4,
-                       viewport: tuple[int, int, int, int]) -> BattleSlot | None:
+                       viewport: tuple[int, int, int, int],
+                       can_act: bool = True) -> BattleSlot | None:
         ray_o, ray_d = unproject_ray(mx, my, proj, view, viewport)
+
+        if self._attacker_slot is not None:
+            hit = self.layout.ray_hit(ray_o, ray_d)
+            enemy_hit = hit and hit.card and not self._can_interact(hit)
+            aegis_hit = not enemy_hit and _ray_hits_aegis(
+                ray_o, ray_d, self._camera.current_perspective)
+
+            if enemy_hit:
+                self.events.emit(
+                    Events.ATTACK_REQUESTED,
+                    attacker_card_id=self._attacker_slot.card.card_id,
+                    target_card_id=hit.card.card_id,
+                )
+            elif aegis_hit:
+                self.events.emit(
+                    Events.AEGIS_ATTACK_REQUESTED,
+                    attacker_card_id=self._attacker_slot.card.card_id,
+                )
+
+            self._attacker_slot.attack_selected = False
+            self._attacker_slot = None
+            return None
+
         hit = self.layout.ray_hit(ray_o, ray_d)
         if hit and not self._can_interact(hit):
             hit = None
+
+        if hit and hit.card and can_act:
+            if self._selected_slot:
+                self._selected_slot.selected = False
+                self._selected_slot = None
+            self._attacker_slot = hit
+            hit.attack_selected = True
+            return None
+
         if hit:
             if self._selected_slot is hit:
                 self._selected_slot = None
@@ -222,6 +261,8 @@ class ViewBoard:
         glBindVertexArray(0)
 
     def _border_color(self, slot: BattleSlot) -> glm.vec4:
+        if slot is self._attacker_slot:
+            return _BORDER_ATTACKER
         if slot is self._selected_slot:
             return _BORDER_SELECTED
         if slot is self._hovered_slot:
@@ -259,3 +300,13 @@ def unproject_ray(
 
     direction = glm.normalize(far_w - near_w)
     return near_w, direction
+
+
+def _ray_hits_aegis(ray_o: glm.vec3, ray_d: glm.vec3, camera_side: GameSide) -> bool:
+    if abs(ray_d.z) < 1e-6:
+        return False
+    t = -ray_o.z / ray_d.z
+    if t < 0:
+        return False
+    hit_y = (ray_o + ray_d * t).y
+    return hit_y > 4.0 if camera_side == GameSide.BLUE else hit_y < -4.0

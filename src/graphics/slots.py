@@ -70,8 +70,9 @@ class BattleSlot:
     key:      SlotKey
     center:   glm.vec3
     size:     glm.vec2
-    hovered:  bool = False
-    selected: bool = False
+    hovered:        bool = False
+    selected:       bool = False
+    attack_selected: bool = False
     card: Optional[object] = None
 
     def world_verts(self) -> np.ndarray:

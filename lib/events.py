@@ -40,5 +40,7 @@ class Events(Enum):
 
     CARD_ATTACKED = auto()
     AEGIS_ATTACKED = auto()
+    ATTACK_REQUESTED = auto()
+    AEGIS_ATTACK_REQUESTED = auto()
 
     MATCH_ENDED = auto()

@@ -21,6 +21,8 @@ class MatchLogic:
         self.__turn = TurnMachine(game_state, self.__economy, event_manager)
         self.__resolver = CombatResolver(game_state.board, self.__economy, event_manager)
         self.__hand: dict[str, Card] = {}
+        self.__board_cards: dict[int, str] = {}
+        self.__view_to_board: dict[str, tuple[GameSide, int]] = {}
         self.__is_active = False
 
         game_state.bind_turn_machine(self.__turn)
@@ -31,9 +33,13 @@ class MatchLogic:
 
     def start_game(self) -> None:
         self.__is_active = True
-        self.__events.subscribe(Events.TURN_END_REQUESTED, self._on_turn_end_requested)
-        self.__events.subscribe(Events.CARD_DRAWN,  self._on_card_drawn)
-        self.__events.subscribe(Events.CARD_PLACED, self._on_card_placed)
+        self.__events.subscribe(Events.TURN_END_REQUESTED,    self._on_turn_end_requested)
+        self.__events.subscribe(Events.CARD_DRAWN,            self._on_card_drawn)
+        self.__events.subscribe(Events.CARD_PLACED,           self._on_card_placed)
+        self.__events.subscribe(Events.CARD_ATTACKED,         self._on_card_attacked)
+        self.__events.subscribe(Events.CARD_DESTROYED,        self._on_card_destroyed)
+        self.__events.subscribe(Events.ATTACK_REQUESTED,      self._on_attack_requested)
+        self.__events.subscribe(Events.AEGIS_ATTACK_REQUESTED, self._on_aegis_attack_requested)
         self.__turn.start_match()
 
     def _on_turn_end_requested(self, data: dict) -> None:
@@ -70,17 +76,75 @@ class MatchLogic:
         try:
             if logic_card.is_turret():
                 if side == GameSide.BLUE:
-                    board.place_turret_card_on_blue_side(logic_card, col + 2)
+                    actual_pos = col + 2
+                    board.place_turret_card_on_blue_side(logic_card, actual_pos)
                 else:
-                    board.place_turret_card_on_red_side(logic_card, col)
+                    actual_pos = col
+                    board.place_turret_card_on_red_side(logic_card, actual_pos)
             else:
                 if side == GameSide.BLUE:
                     board.place_card_on_blue_side(logic_card, col)
                 else:
                     board.place_card_on_red_side(logic_card, col)
+                actual_pos = col
+
+            self.__board_cards[logic_card.id] = card_id
+            self.__view_to_board[card_id] = (side, actual_pos)
             self.__turn.request_action(side)
         except ValueError:
             self.__hand[card_id] = logic_card
+
+    def _on_card_attacked(self, data: dict) -> None:
+        attacker_int: int | None = data.get("attacker_id")
+        target_int: int | None   = data.get("target_id")
+        if attacker_int is None or target_int is None:
+            return
+        attacker_view = self.__board_cards.get(attacker_int)
+        target_view   = self.__board_cards.get(target_int)
+        if attacker_view and target_view:
+            self.__events.emit(
+                Events.LOGIC_COMBAT_RESOLVED,
+                attacker_id=attacker_view,
+                target_id=target_view,
+            )
+
+    def _on_card_destroyed(self, data: dict) -> None:
+        logic_id: int | None = data.get("card_id")
+        if logic_id is None:
+            return
+        view_id = self.__board_cards.pop(logic_id, None)
+        if view_id:
+            self.__view_to_board.pop(view_id, None)
+            self.__events.emit(Events.CARD_REMOVED, card_id=view_id)
+
+    def _on_attack_requested(self, data: dict) -> None:
+        attacker_view: str | None = data.get("attacker_card_id")
+        target_view: str | None   = data.get("target_card_id")
+        if attacker_view is None or target_view is None:
+            return
+        atk = self.__view_to_board.get(attacker_view)
+        tgt = self.__view_to_board.get(target_view)
+        if atk is None or tgt is None:
+            return
+        try:
+            self.__resolver.attack_card(atk[0], atk[1], tgt[0], tgt[1])
+        except Exception:
+            pass
+
+    def _on_aegis_attack_requested(self, data: dict) -> None:
+        attacker_view: str | None = data.get("attacker_card_id")
+        if attacker_view is None:
+            return
+        atk = self.__view_to_board.get(attacker_view)
+        if atk is None:
+            return
+        defender_side = GameSide.RED if atk[0] == GameSide.BLUE else GameSide.BLUE
+        try:
+            self.__resolver.attack_aegis(
+                atk[0], atk[1], self.__state.aegis(defender_side)
+            )
+        except Exception:
+            pass
 
     def execute_attack(
         self,

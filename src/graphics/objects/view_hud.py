@@ -43,7 +43,7 @@ class ViewHud:
         if self._font:
             self._font.unload()
             self._font = None
-        for key in ("hud_ally_bg", "hud_ally_fill", "hud_enemy_bg", "hud_enemy_fill"):
+        for key in ("hud_ally_bg", "hud_ally_fill", "hud_enemy_bg", "hud_enemy_fill", "hud_overlay"):
             self._renderer.delete(key)
 
     def _upload_bars(self) -> None:
@@ -66,6 +66,11 @@ class ViewHud:
             "hud_enemy_fill",
             _bar_quad(_ENEMY_BAR_X, _ENEMY_BAR_Y, _BAR_W, _BAR_H),
             _LAYOUT, _IDX, usage=GL_DYNAMIC_DRAW,
+        )
+        self._renderer.upload(
+            "hud_overlay",
+            np.array([0, 0, W, 0, W, H, 0, H], dtype=np.float32),
+            _LAYOUT, _IDX,
         )
 
     def render(self, proj: glm.mat4, state: GameState, camera_side: GameSide) -> None:
@@ -114,6 +119,27 @@ class ViewHud:
             color=glm.vec4(0.80, 0.80, 0.85, 0.80),
             projection=proj,
             scale=1.0, anchor_x="right",
+        )
+
+    def render_match_end(self, proj: glm.mat4, is_winner: bool) -> None:
+        prog = self._renderer.use("scenes_battleground")
+        _up_proj(prog, proj)
+        glUniform4f(glGetUniformLocation(prog, "color"), 0.0, 0.0, 0.0, 0.72)
+        glUniform1f(glGetUniformLocation(prog, "alpha"), 0.72)
+        self._renderer.draw("hud_overlay")
+
+        if not self._font:
+            return
+        text  = "VITORIA!" if is_winner else "DERROTA"
+        color = (glm.vec4(0.95, 0.85, 0.30, 1.0) if is_winner
+                 else glm.vec4(1.00, 0.30, 0.30, 1.0))
+        self._font.draw(text=text, x=W // 2, y=H // 2,
+                        color=color, projection=proj, scale=2.0, anchor_x="center")
+        self._font.draw(
+            text="Pressione ESC para sair",
+            x=W // 2, y=H // 2 + 50,
+            color=glm.vec4(0.75, 0.75, 0.80, 0.80),
+            projection=proj, scale=0.9, anchor_x="center",
         )
 
     def _draw_bar(
