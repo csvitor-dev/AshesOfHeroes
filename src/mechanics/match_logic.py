@@ -73,31 +73,37 @@ class MatchLogic:
     def _place_card_direct(self, card_id: str, side: GameSide, logic_card, view_card) -> None:
         from src.graphics.slots import SlotKey
         board = self.__state.board
-        occupied = {pos for pos, _ in board.all_cards(side) if pos >= 0}
-        free_col = next((c for c in range(7) if c not in occupied), None)
-        if free_col is None:
-            return
+        owner = SlotOwner.PLAYER if side == GameSide.BLUE else SlotOwner.OPPONENT
+        texture = (view_card.texture_path if view_card is not None
+                   else "assets/cards/heroes/hero_1.png")
         try:
             if logic_card.is_turret():
-                actual_pos = free_col + 2 if side == GameSide.BLUE else free_col
+                turret_range = range(2, 4) if side == GameSide.BLUE else range(0, 2)
+                turret_occupied = {pos for pos, _ in board.all_cards(side) if pos in turret_range}
+                free_pos = next((p for p in turret_range if p not in turret_occupied), None)
+                if free_pos is None:
+                    return
                 if side == GameSide.BLUE:
-                    board.place_turret_card_on_blue_side(logic_card, actual_pos)
+                    board.place_turret_card_on_blue_side(logic_card, free_pos)
                 else:
-                    board.place_turret_card_on_red_side(logic_card, actual_pos)
+                    board.place_turret_card_on_red_side(logic_card, free_pos)
+                self.__board_cards[logic_card.id] = card_id
+                self.__view_to_board[card_id] = (side, free_pos)
+                visual_col = free_pos - 2 if side == GameSide.BLUE else free_pos
+                slot_key = SlotKey(SlotKind.BATTLE, owner, row=0, col=visual_col)
             else:
+                battle_occupied = {pos for pos, _ in board.all_cards(side) if 0 <= pos < 7}
+                free_col = next((c for c in range(7) if c not in battle_occupied), None)
+                if free_col is None:
+                    return
                 if side == GameSide.BLUE:
                     board.place_card_on_blue_side(logic_card, free_col)
                 else:
                     board.place_card_on_red_side(logic_card, free_col)
-                actual_pos = free_col
+                self.__board_cards[logic_card.id] = card_id
+                self.__view_to_board[card_id] = (side, free_col)
+                slot_key = SlotKey(SlotKind.BATTLE, owner, row=1, col=free_col)
 
-            self.__board_cards[logic_card.id] = card_id
-            self.__view_to_board[card_id] = (side, actual_pos)
-
-            owner = SlotOwner.PLAYER if side == GameSide.BLUE else SlotOwner.OPPONENT
-            slot_key = SlotKey(SlotKind.BATTLE, owner, row=1, col=free_col)
-            texture = (view_card.texture_path if view_card is not None
-                       else "assets/cards/heroes/hero_1.png")
             self.__events.emit(
                 Events.CARD_PLACED,
                 card_id=card_id,

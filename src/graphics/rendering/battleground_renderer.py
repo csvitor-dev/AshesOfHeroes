@@ -13,6 +13,7 @@ from src.graphics.objects.view_deck import ViewDeck
 from src.graphics.objects.view_hud import ViewHud
 from src.graphics.objects.view_inventory import ViewInventory
 from src.logic.game_state import GameState
+from src.logic.catalog import DECK_BLUE_IDS, DECK_RED_IDS, texture_for_id
 from lib.types import GameSide
 
 
@@ -39,6 +40,8 @@ class BattlegroundRenderer:
         self._view_deck = ViewDeck(
             renderer, event_manager, textures, camera,
             can_act=game_state.can_act,
+            blue_textures=[texture_for_id(i) for i in DECK_BLUE_IDS],
+            red_textures=[texture_for_id(i) for i in DECK_RED_IDS],
         )
         self._view_hud = ViewHud(renderer)
         self._view_hand_blue = ViewInventory(

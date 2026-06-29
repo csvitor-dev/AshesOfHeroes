@@ -1,5 +1,4 @@
 import math
-import os
 from OpenGL.GL import *
 from pyglm import glm
 from typing import Any, Callable
@@ -19,31 +18,19 @@ _POS_STACK_BLUE = glm.vec3(5.2, -1.1, 0.0)
 _POS_STACK_RED = glm.vec3(5.2,  1.1, 0.0)
 _POS_BTN = glm.vec3(5.2,  0.0, 0.0)
 
-_CARDS_DIR = "assets/cards"
-_DECK_SIZE = 5
-
-
-def _card_textures() -> list[str]:
-    supported = {".png", ".jpg", ".jpeg"}
-    try:
-        files = sorted([
-            os.path.join(_CARDS_DIR, f)
-            for f in os.listdir(_CARDS_DIR)
-            if os.path.splitext(f)[1].lower() in supported
-        ])
-    except FileNotFoundError:
-        files = []
-    return files
+_FALLBACK = "assets/cards/heroes/hero_1.png"
 
 
 class ViewDeck:
     def __init__(
         self,
-        renderer:      Renderer,
-        event_manager: EventManager,
-        textures:      TextureManager,
-        camera:        Camera,
-        can_act:       Callable[[GameSide], bool] | None = None,
+        renderer:       Renderer,
+        event_manager:  EventManager,
+        textures:       TextureManager,
+        camera:         Camera,
+        can_act:        Callable[[GameSide], bool] | None = None,
+        blue_textures:  list[str] | None = None,
+        red_textures:   list[str] | None = None,
     ):
 
         self._renderer = renderer
@@ -51,6 +38,8 @@ class ViewDeck:
         self._events = event_manager
         self._camera = camera
         self._can_act = can_act or (lambda _side: True)
+        self._blue_textures = blue_textures or [_FALLBACK]
+        self._red_textures  = red_textures  or [_FALLBACK]
 
         self._stack_blue: CardStack | None = None
         self._stack_red:  CardStack | None = None
@@ -79,15 +68,9 @@ class ViewDeck:
 
     def _init_decks(self) -> None:
         self._renderer.load_program("objects", "card")
-        textures = _card_textures()
-        default = "assets/cards/heroes/hero_1.png"
-
-        for i in range(_DECK_SIZE):
-            tex = textures[i % len(textures)] if textures else default
+        for i, tex in enumerate(self._blue_textures):
             self._push_card(self._stack_blue, card_id=f"blue_{i}", texture=tex)
-
-        for i in range(_DECK_SIZE):
-            tex = textures[i % len(textures)] if textures else default
+        for i, tex in enumerate(self._red_textures):
             self._push_card(self._stack_red, card_id=f"red_{i}", texture=tex, face_flip=1.0)
 
     def _push_card(self, stack: CardStack, card_id: str, texture: str, face_flip: float = 0.0) -> None:
