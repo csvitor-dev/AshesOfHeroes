@@ -85,7 +85,7 @@ class BattlegroundRenderer:
         self._view_hand.render(proj, self._game_state)
 
     def _render_hud(self, proj: glm.mat4) -> None:
-        self._view_hud.render(proj, self._game_state)
+        self._view_hud.render(proj, self._game_state, self._camera.current_perspective)
 
     def on_mouse_move(self, mx: float, my: float) -> None:
         if self.__proj3d and self.__view:
