@@ -239,6 +239,7 @@ class ViewBoard:
                            1, GL_FALSE, glm.value_ptr(view))
         glUniformMatrix4fv(glGetUniformLocation(prog, "model"),
                            1, GL_FALSE, glm.value_ptr(glm.mat4(1.0)))
+        glUniform4f(glGetUniformLocation(prog, "color"), 0.0, 0.0, 0.0, 0.0)
         glUniform1f(glGetUniformLocation(prog, "alpha"), 1.0)
         self.renderer.draw("board_mesh")
 
@@ -277,6 +278,8 @@ class ViewBoard:
                            1, GL_FALSE, glm.value_ptr(proj))
         glUniformMatrix4fv(glGetUniformLocation(prog, "camera"),
                            1, GL_FALSE, glm.value_ptr(view))
+        glUniform4f(glGetUniformLocation(prog, "color"), 0.0, 0.0, 0.0, 0.0)
+        glUniform1f(glGetUniformLocation(prog, "alpha"), 1.0)
         for vc in self.view_cards.values():
             vc.draw_3d(prog, proj=proj, view=view)
 

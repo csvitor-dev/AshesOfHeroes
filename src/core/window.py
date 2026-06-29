@@ -1,3 +1,4 @@
+import sys
 import glfw
 from OpenGL.GL import *
 from typing import Any, Callable
@@ -40,7 +41,8 @@ class Window:
         glfw.window_hint(glfw.CONTEXT_VERSION_MAJOR, 3)
         glfw.window_hint(glfw.CONTEXT_VERSION_MINOR, 3)
         glfw.window_hint(glfw.OPENGL_PROFILE, glfw.OPENGL_CORE_PROFILE)
-        glfw.window_hint(glfw.OPENGL_FORWARD_COMPAT, GL_TRUE)
+        if sys.platform == "darwin":
+            glfw.window_hint(glfw.OPENGL_FORWARD_COMPAT, GL_TRUE)
 
         self.__handle = glfw.create_window(
             self.__width, self.__height, self.__title, None, None)
