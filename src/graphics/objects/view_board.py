@@ -22,7 +22,7 @@ _BORDER = {
     SlotOwner.OPPONENT: glm.vec4(1.00, 0.30, 0.30, 0.85),
     SlotOwner.NEUTRAL:  glm.vec4(0.30, 0.80, 0.40, 0.85),
 }
-_BORDER_HOVER    = glm.vec4(1.00, 1.00, 0.40, 1.00)
+_BORDER_HOVER = glm.vec4(1.00, 1.00, 0.40, 1.00)
 _BORDER_SELECTED = glm.vec4(1.00, 0.85, 0.10, 1.00)
 _BORDER_ATTACKER = glm.vec4(1.00, 0.55, 0.00, 1.00)
 
@@ -75,6 +75,7 @@ class ViewBoard:
         layout = VertexLayout([
             VertexAttribute("position", GL_FLOAT, 3),
             VertexAttribute("color",    GL_FLOAT, 3),
+            VertexAttribute("normal", GL_FLOAT, 3)
         ])
         s = 5.0
         floor_color = [1.00, 0.79, 0.42]
@@ -82,15 +83,28 @@ class ViewBoard:
         z_axis = 0.0
         z_line = 0.01
 
+        nx, ny, nz = 0.0, 0.0, 1.0
+
+        fc_r, fc_g, fc_b = floor_color
+        lc_r, lg_c, lc_b = line_color
+
         verts = np.array([
-            -s, -s, z_axis,  *floor_color,   s, -s, z_axis,  *
-            floor_color,   s,  s, z_axis,  *floor_color,
-            s,  s, z_axis,  *floor_color,  -s,  s, z_axis,  *
-            floor_color,  -s, -s, z_axis,  *floor_color,
-            -s, -0.08, z_line, *line_color,   s, -0.08, z_line, *
-            line_color,   s, 0.08, z_line, *line_color,
-            -s, -0.08, z_line, *line_color,   s,  0.08, z_line, *
-            line_color,  -s, 0.08, z_line, *line_color,
+
+            -s, -s, z_axis,  fc_r, fc_g, fc_b,  nx, ny, nz,
+            s, -s, z_axis,  fc_r, fc_g, fc_b,  nx, ny, nz,
+            s,  s, z_axis,  fc_r, fc_g, fc_b,  nx, ny, nz,
+
+            s,  s, z_axis,  fc_r, fc_g, fc_b,  nx, ny, nz,
+            -s,  s, z_axis,  fc_r, fc_g, fc_b,  nx, ny, nz,
+            -s, -s, z_axis,  fc_r, fc_g, fc_b,  nx, ny, nz,
+
+            -s, -0.08, z_line,  lc_r, lg_c, lc_b,  nx, ny, nz,
+            s, -0.08, z_line,  lc_r, lg_c, lc_b,  nx, ny, nz,
+            s,  0.08, z_line,  lc_r, lg_c, lc_b,  nx, ny, nz,
+
+            -s, -0.08, z_line,  lc_r, lg_c, lc_b,  nx, ny, nz,
+            s,  0.08, z_line,  lc_r, lg_c, lc_b,  nx, ny, nz,
+            -s,  0.08, z_line,  lc_r, lg_c, lc_b,  nx, ny, nz,
         ], dtype=np.float32)
 
         self.renderer.upload("board_mesh", verts, layout)
@@ -239,6 +253,30 @@ class ViewBoard:
                            1, GL_FALSE, glm.value_ptr(view))
         glUniformMatrix4fv(glGetUniformLocation(prog, "model"),
                            1, GL_FALSE, glm.value_ptr(glm.mat4(1.0)))
+
+        light1_pos = glm.vec3(0.0, 5.0, 5.0)
+        light1_color = glm.vec3(0.8, 0.1, 0.0)
+        light2_pos = glm.vec3(0.0, -3.0, 5.0)
+        light2_color = glm.vec3(0.0, 0.1, 0.9)
+
+        glUniform3fv(glGetUniformLocation(prog, "light1_pos"),
+                     1, glm.value_ptr(light1_pos))
+        glUniform3fv(glGetUniformLocation(prog, "light1_color"),
+                     1, glm.value_ptr(light1_color))
+        glUniform3fv(glGetUniformLocation(prog, "light2_pos"),
+                     1, glm.value_ptr(light2_pos))
+        glUniform3fv(glGetUniformLocation(prog, "light2_color"),
+                     1, glm.value_ptr(light2_color))
+
+        view_inv = glm.inverse(view)
+        camera_pos = glm.vec3(view_inv[3][0], view_inv[3][1], view_inv[3][2])
+        glUniform3fv(glGetUniformLocation(prog, "viewPos"),
+                     1, glm.value_ptr(camera_pos))
+
+        glUniform1f(glGetUniformLocation(prog, "constant"), 1.0)
+        glUniform1f(glGetUniformLocation(prog, "linear"), 0.17)
+        glUniform1f(glGetUniformLocation(prog, "quadratic"), 0.1)
+
         glUniform4f(glGetUniformLocation(prog, "color"), 0.0, 0.0, 0.0, 0.0)
         glUniform1f(glGetUniformLocation(prog, "alpha"), 1.0)
         self.renderer.draw("board_mesh")
@@ -251,7 +289,6 @@ class ViewBoard:
                            1, GL_FALSE, glm.value_ptr(view))
         glUniformMatrix4fv(glGetUniformLocation(prog, "model"),
                            1, GL_FALSE, glm.value_ptr(glm.mat4(1.0)))
-
         glBindVertexArray(self.renderer.get_vao_id_by_key("slot_borders"))
         for i, slot in enumerate(self._slot_list):
             color = self._border_color(slot)
