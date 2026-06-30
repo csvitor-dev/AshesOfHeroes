@@ -27,15 +27,6 @@ class CardDef:
 
 CARD_DEFS: list[CardDef] = [
     CardDef(
-        id=0,
-        name="Torre de Guarda",
-        description="Estrutura sólida que ancora a linha de frente.",
-        texture="assets/cards/turrets/turret_1.png",
-        card_class=CardClass.TURRET,
-        gold_cost=0, gold_profit=5,
-        hp=150, attack=15, armor=8,
-    ),
-    CardDef(
         id=1,
         name="Miktraak, o Hemomante",
         description="Sacerdote de sangue que drena a vida dos inimigos para curar aliados.",
@@ -107,15 +98,15 @@ CARD_DEFS: list[CardDef] = [
         texture="assets/cards/spells/glacial_lightning.png",
         card_class=CardClass.SPELL,
         gold_cost=4, gold_profit=0,
-        hp=1, attack=0, armor=0,
+        hp=1, attack=15, armor=0,
         magic_damage=80,
     ),
 ]
 
 _BY_ID: dict[int, CardDef] = {d.id: d for d in CARD_DEFS}
 
-DECK_BLUE_IDS: list[int] = [0, 1, 2, 5, 7]
-DECK_RED_IDS:  list[int] = [0, 3, 4, 6, 8]
+DECK_BLUE_IDS: list[int] = [1, 2, 5, 7]
+DECK_RED_IDS:  list[int] = [3, 4, 6, 8]
 
 
 def texture_for_id(card_id: int) -> str:
