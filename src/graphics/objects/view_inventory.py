@@ -119,8 +119,6 @@ class ViewInventory:
     def _on_card_drawn(self, data: dict) -> None:
         if data.get("side") != self._side:
             return
-        if self._round_fn() == 1:
-            return
         card = data.get("card")
         slot = next((s for s in self._slots if s.card is None), None)
         if slot is None or card is None:

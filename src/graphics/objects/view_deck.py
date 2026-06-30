@@ -68,10 +68,12 @@ class ViewDeck:
 
     def _init_decks(self) -> None:
         self._renderer.load_program("objects", "card")
-        for i, tex in enumerate(self._blue_textures):
-            self._push_card(self._stack_blue, card_id=f"blue_{i}", texture=tex)
-        for i, tex in enumerate(self._red_textures):
-            self._push_card(self._stack_red, card_id=f"red_{i}", texture=tex, face_flip=1.0)
+        n = len(self._blue_textures)
+        for i in range(n - 1, -1, -1):
+            self._push_card(self._stack_blue, card_id=f"blue_{i}", texture=self._blue_textures[i])
+        n = len(self._red_textures)
+        for i in range(n - 1, -1, -1):
+            self._push_card(self._stack_red, card_id=f"red_{i}", texture=self._red_textures[i], face_flip=1.0)
 
     def _push_card(self, stack: CardStack, card_id: str, texture: str, face_flip: float = 0.0) -> None:
         vis = ViewCard(
