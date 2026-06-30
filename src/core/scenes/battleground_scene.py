@@ -91,8 +91,21 @@ class BattlegroundScene(Scene):
     def handle_input(self) -> None: ...
 
     def on_key(self, key: int, action: int, mods: int) -> None:
-        if action == glfw.PRESS and key == glfw.KEY_ESCAPE:
+        if action != glfw.PRESS:
+            return
+        if key == glfw.KEY_ESCAPE:
             self._scenes.pop_scene()
+        elif key == glfw.KEY_K:
+            self._force_victory_by_hp()
+
+    def _force_victory_by_hp(self) -> None:
+        blue_hp = self._game_state.aegis(GameSide.BLUE).current_health
+        red_hp  = self._game_state.aegis(GameSide.RED).current_health
+        if blue_hp == red_hp:
+            return
+        winner = GameSide.BLUE if blue_hp > red_hp else GameSide.RED
+        self._game_state.set_winner(winner)
+        self._events.emit(Events.MATCH_ENDED, winner_side=winner)
 
     def on_mouse_move(self, mx: float, my: float) -> None:
         if self._board:

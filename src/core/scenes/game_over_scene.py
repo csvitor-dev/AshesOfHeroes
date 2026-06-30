@@ -26,9 +26,7 @@ class GameOverScene(Scene):
 
     def on_enter(self, **params: Any) -> None:
         self._t = 0.0
-        winner = self._game_state.winner_side
-        is_winner = winner == self._camera.current_perspective if winner is not None else False
-        self._game_over = GameOverRenderer(self._renderer, is_winner)
+        self._game_over = GameOverRenderer(self._renderer, self._game_state.winner_side)
         self._game_over.load_assets()
 
     def on_exit(self) -> None:

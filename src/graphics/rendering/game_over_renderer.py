@@ -6,32 +6,34 @@ from pyglm import glm
 from src.graphics.rendering.renderer import Renderer
 from src.graphics.vertex import VertexLayout, VertexAttribute
 from src.graphics.rendering.font_renderer import FontRenderer
+from lib.types import GameSide
 
 
 W, H = 1280, 720
 
-_COLOR_BG          = glm.vec4(0.07, 0.07, 0.08, 1.00)
-_COLOR_BORDER      = glm.vec4(0.55, 0.54, 0.52, 0.40)
-_COLOR_BORDER_HOV  = glm.vec4(0.92, 0.91, 0.88, 0.90)
-_COLOR_BTN_HOV     = glm.vec4(1.00, 1.00, 1.00, 0.06)
-_COLOR_WIN         = glm.vec4(0.95, 0.85, 0.30, 1.00)
-_COLOR_LOSE        = glm.vec4(1.00, 0.30, 0.30, 1.00)
-_COLOR_SUBTITLE    = glm.vec4(0.60, 0.58, 0.55, 0.75)
-_COLOR_BTN_LABEL   = glm.vec4(0.92, 0.91, 0.88, 1.00)
+_COLOR_BG = glm.vec4(0.07, 0.07, 0.08, 1.00)
+_COLOR_BORDER = glm.vec4(0.55, 0.54, 0.52, 0.40)
+_COLOR_BORDER_HOV = glm.vec4(0.92, 0.91, 0.88, 0.90)
+_COLOR_BTN_HOV = glm.vec4(1.00, 1.00, 1.00, 0.06)
+_COLOR_BLUE_SIDE = glm.vec4(0.20, 0.55, 1.00, 1.00)
+_COLOR_RED_SIDE = glm.vec4(1.00, 0.25, 0.25, 1.00)
+_COLOR_NEUTRAL = glm.vec4(0.95, 0.85, 0.30, 1.00)
+_COLOR_SUBTITLE = glm.vec4(0.60, 0.58, 0.55, 0.75)
+_COLOR_BTN_LABEL = glm.vec4(0.92, 0.91, 0.88, 1.00)
 
 _LAYOUT_POS2 = VertexLayout([VertexAttribute("position", GL_FLOAT, 2)])
 
 
 class GameOverRenderer:
-    def __init__(self, renderer: Renderer, is_winner: bool):
+    def __init__(self, renderer: Renderer, winner_side: GameSide | None):
         self._renderer = renderer
-        self._is_winner = is_winner
+        self._winner_side = winner_side
         self._t = 0.0
         self._alpha = 0.0
 
         self._title_font = FontRenderer("CinzelDecorative-Bold", renderer, 72)
-        self._sub_font   = FontRenderer("CinzelDecorative-Regular", renderer, 28)
-        self._btn_font   = FontRenderer("CinzelDecorative-Regular", renderer, 22)
+        self._sub_font = FontRenderer("CinzelDecorative-Regular", renderer, 28)
+        self._btn_font = FontRenderer("CinzelDecorative-Regular", renderer, 22)
 
         cx = W / 2
         self._btn_cx, self._btn_cy = cx, H / 2 + 60
@@ -65,8 +67,10 @@ class GameOverRenderer:
         self._renderer.upload("go_bg", bg, _LAYOUT_POS2,
                               np.array([0, 1, 2, 2, 3, 0], dtype=np.uint32))
 
-        self._renderer.upload("go_hex_outer", self._hex_outer_verts, _LAYOUT_POS2)
-        self._renderer.upload("go_hex_inner", self._hex_inner_verts, _LAYOUT_POS2)
+        self._renderer.upload(
+            "go_hex_outer", self._hex_outer_verts, _LAYOUT_POS2)
+        self._renderer.upload(
+            "go_hex_inner", self._hex_inner_verts, _LAYOUT_POS2)
 
         dc, dy = self._dot_cx, self._dot_cy
         dot = np.array([dc-4, dy-4, dc+4, dy-4, dc+4, dy+4, dc-4, dy+4],
@@ -77,7 +81,8 @@ class GameOverRenderer:
         bx = self._btn_cx - self._btn_w / 2
         by = self._btn_cy - self._btn_h / 2
         bx1, by1 = bx + self._btn_w, by + self._btn_h
-        btn_quad = np.array([bx, by, bx1, by, bx1, by1, bx, by1], dtype=np.float32)
+        btn_quad = np.array(
+            [bx, by, bx1, by, bx1, by1, bx, by1], dtype=np.float32)
         btn_bord = np.array([bx+1, by+1, bx1-1, by+1, bx1-1, by1-1, bx+1, by1-1],
                             dtype=np.float32)
         self._renderer.upload("go_btn_bg", btn_quad, _LAYOUT_POS2,
@@ -120,9 +125,10 @@ class GameOverRenderer:
         prog = self._renderer.use("scenes_menu")
         _up_proj(prog, proj)
         pulse = 0.55 + 0.20 * math.sin(self._t * 1.8)
-        hex_col = _COLOR_WIN if self._is_winner else _COLOR_LOSE
+        hex_col = self._side_color()
 
-        _up_color(prog, glm.vec4(hex_col.x, hex_col.y, hex_col.z, pulse * a * 0.7))
+        _up_color(prog, glm.vec4(hex_col.x, hex_col.y,
+                  hex_col.z, pulse * a * 0.7))
         _up_alpha(prog, pulse * a * 0.7)
         glBindVertexArray(self._renderer.get_vao_id_by_key("go_hex_outer"))
         glDrawArrays(GL_LINE_LOOP, 0, 6)
@@ -135,19 +141,31 @@ class GameOverRenderer:
         glDrawArrays(GL_LINE_LOOP, 0, 6)
         glBindVertexArray(0)
 
-        _up_color(prog, glm.vec4(hex_col.x, hex_col.y, hex_col.z, pulse * a * 0.7))
+        _up_color(prog, glm.vec4(hex_col.x, hex_col.y,
+                  hex_col.z, pulse * a * 0.7))
         _up_alpha(prog, pulse * a * 0.7)
         self._renderer.draw("go_hex_dot")
 
+    def _side_color(self) -> glm.vec4:
+        if self._winner_side == GameSide.BLUE:
+            return _COLOR_BLUE_SIDE
+        if self._winner_side == GameSide.RED:
+            return _COLOR_RED_SIDE
+        return _COLOR_NEUTRAL
+
     def _render_texts(self, proj: glm.mat4, a: float) -> None:
-        title = "VITORIA!" if self._is_winner else "DERROTA"
-        t_col = _COLOR_WIN if self._is_winner else _COLOR_LOSE
+        t_col = self._side_color()
         self._title_font.draw(
-            text=title, x=W / 2, y=H / 2 - 230,
+            text="Victory!", x=W / 2, y=H / 2 - 230,
             color=glm.vec4(t_col.x, t_col.y, t_col.z, t_col.w * a),
             projection=proj, scale=1.0, anchor_x="center",
         )
-        sub = "Bem jogado!" if self._is_winner else "Mais sorte na proxima vez."
+        if self._winner_side == GameSide.BLUE:
+            sub = "Blue side wins!"
+        elif self._winner_side == GameSide.RED:
+            sub = "Red side wins!"
+        else:
+            sub = "It's a tie!"
         self._sub_font.draw(
             text=sub, x=W / 2, y=H / 2 - 175,
             color=glm.vec4(_COLOR_SUBTITLE.x, _COLOR_SUBTITLE.y,
@@ -179,7 +197,7 @@ class GameOverRenderer:
             _COLOR_BTN_LABEL.w * a,
         )
         self._btn_font.draw(
-            text="Voltar ao Menu",
+            text="Back to Menu",
             x=self._btn_cx, y=self._btn_cy + 22 * 0.35,
             color=lbl_col, projection=proj,
             scale=1.0, anchor_x="center",
