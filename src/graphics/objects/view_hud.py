@@ -175,7 +175,7 @@ class ViewHud:
             projection=proj, scale=1.0, anchor_x="left",
         )
         self._font.draw(
-            text=f"Ess: {aegis.essences}",
+            text=f"Aegis Essences: {aegis.essences}",
             x=x + 410, y=y,
             color=glm.vec4(0.60, 0.85, 1.00, color.w),
             projection=proj, scale=1.0, anchor_x="left",

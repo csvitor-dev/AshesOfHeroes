@@ -72,7 +72,7 @@ class MenuRenderer:
             Button(
                 cx=cx, cy=H / 2 + 20,
                 w=360, h=52,
-                label="Campo de Batalha",
+                label="Fight!",
                 key="battle",
                 font_size=26,
                 color=_COLOR_BTN_PRIMARY,
@@ -80,7 +80,7 @@ class MenuRenderer:
             Button(
                 cx=cx, cy=H / 2 + 90,
                 w=360, h=38,
-                label="Sair",
+                label="Exit",
                 key="exit",
                 font_size=20,
                 color=_COLOR_BTN_EXIT,
@@ -248,7 +248,7 @@ class MenuRenderer:
             proj=proj,
         )
         self._draw_text_centered(
-            text="Escolha seu destino",
+            text="Choose your fate",
             cx=W / 2,
             cy=H / 2 - 200,
             size=32,
