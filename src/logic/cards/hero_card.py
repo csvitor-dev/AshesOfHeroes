@@ -78,9 +78,13 @@ class HeroCard(Card):
 
     def __increase_skills(self):
         ...
+        
+    @property
+    def current_health(self) -> int:
+        return self.__attributes.health
 
     def add_item(self, item_card: ItemCard) -> bool:
-        for cell in self.items:
+        for cell in self.__items:
             if cell.occupied is False:
                 cell.set_card(item_card)
                 return True

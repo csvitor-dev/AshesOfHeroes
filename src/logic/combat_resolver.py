@@ -47,18 +47,18 @@ class CombatResolver:
         target = self._board.get_card(target_side, target_pos)
 
         if attacker is None or not isinstance(attacker, EntityCard):
-            raise IllegalActionError("Attacker not found or not an entity card")
+            raise IllegalActionError(
+                "Attacker not found or not an entity card")
         if target is None or not isinstance(target, EntityCard):
             raise IllegalActionError("Target not found or not an entity card")
         if not attacker.can_attack:
             raise IllegalActionError("Attacker cannot attack this turn")
 
         damage = attacker.attack_damage
-        target.take_damage(damage)
-        if target.is_alive:
-            attacker.take_damage(target.attack_damage)
+        attacker.attack(target)
 
-        attacker._has_attacked = True  # mark via reset_turn_state flow
+        print(
+            f"attacker: {attacker._name} (hp: {attacker.current_health}, atk: {damage}) | target: {target._name} (hp: {target.current_health})")
 
         profit = target.gold_profit if not target.is_alive else 0
         result = CombatResult(
@@ -74,7 +74,8 @@ class CombatResolver:
             attacker_id=attacker.id,
             target_id=target.id,
             damage=damage,
-            target_hp_remaining=target.take_damage(0) if target.is_alive else 0,
+            target_hp_remaining=target.take_damage(
+                0) if target.is_alive else 0,
         )
 
         if not target.is_alive:
@@ -112,12 +113,16 @@ class CombatResolver:
 
         attacker = self._board.get_card(attacker_side, attacker_pos)
         if attacker is None or not isinstance(attacker, EntityCard):
-            raise IllegalActionError("Attacker not found or not an entity card")
+            raise IllegalActionError(
+                "Attacker not found or not an entity card")
         if not attacker.can_attack:
             raise IllegalActionError("Attacker cannot attack this turn")
 
         damage = attacker.attack_damage
         defender.take_damage(damage)
+        attacker._has_attacked = True
+
+        print(f"attacker: {attacker._name} (hp: {attacker.current_health}, atk: {damage}) | target: Aegis({defender.side}) (hp: {defender.current_health})")
 
         self._events.emit(
             Events.AEGIS_ATTACKED,

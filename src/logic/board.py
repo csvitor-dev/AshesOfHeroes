@@ -80,14 +80,26 @@ class Board:
     # --- Queries ---
 
     def get_card(self, side: GameSide, position: int) -> Optional[Card]:
+        if position < 0:
+            turret_index = -(position + 1)
+            expected = range(2, 4) if side == GameSide.BLUE else range(0, 2)
+            if turret_index not in expected:
+                return None
+            return self.__turrets[turret_index].card
         cells = self.__side_cells(side)
-        if position < 0 or position >= len(cells):
+        if position >= len(cells):
             return None
         return cells[position].card
 
     def remove_card(self, side: GameSide, position: int) -> Optional[Card]:
+        if position < 0:
+            turret_index = -(position + 1)
+            expected = range(2, 4) if side == GameSide.BLUE else range(0, 2)
+            if turret_index not in expected:
+                return None
+            return self.remove_turret(side, turret_index)
         cells = self.__side_cells(side)
-        if position < 0 or position >= len(cells):
+        if position >= len(cells):
             return None
         card = cells[position].card
         if card is not None:

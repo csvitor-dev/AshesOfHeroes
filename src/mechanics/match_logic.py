@@ -42,6 +42,29 @@ class MatchLogic:
         self.__events.subscribe(Events.AEGIS_ATTACK_REQUESTED, self._on_aegis_attack_requested)
         self.__events.subscribe(Events.MATCH_ENDED,            self._on_match_ended)
         self.__turn.start_match()
+        self._place_initial_structures()
+
+    def _place_initial_structures(self) -> None:
+        from src.graphics.slots import SlotKey
+        board = self.__state.board
+        configs = [
+            (GameSide.RED,  -(1 + 1), SlotOwner.OPPONENT),
+            (GameSide.BLUE, -(3 + 1), SlotOwner.PLAYER),
+        ]
+        for side, pos, owner in configs:
+            card = board.get_card(side, pos)
+            if card is None:
+                continue
+            view_id = f"init_{side.name.lower()}"
+            self.__board_cards[card.id] = view_id
+            self.__view_to_board[view_id] = (side, pos)
+            self.__events.emit(
+                Events.CARD_PLACED,
+                card_id=view_id,
+                slot_key=SlotKey(SlotKind.BATTLE, owner, row=0, col=1),
+                texture="assets/cards/turrets/turret_1.png",
+                card=None,
+            )
 
     def _on_match_ended(self, data: dict) -> None:
         winner: GameSide | None = data.get("winner_side")
@@ -63,57 +86,8 @@ class MatchLogic:
 
         logic_card = deck.draw_card()
 
-        if self.__state.round_number == 1:
-            self._place_card_direct(card_id, side, logic_card, data.get("card"))
-            return
-
         self.__hand[card_id] = logic_card
         self.__turn.request_action(side)
-
-    def _place_card_direct(self, card_id: str, side: GameSide, logic_card, view_card) -> None:
-        from src.graphics.slots import SlotKey
-        board = self.__state.board
-        owner = SlotOwner.PLAYER if side == GameSide.BLUE else SlotOwner.OPPONENT
-        texture = (view_card.texture_path if view_card is not None
-                   else "assets/cards/heroes/hero_1.png")
-        try:
-            if logic_card.is_turret():
-                turret_range = range(2, 4) if side == GameSide.BLUE else range(0, 2)
-                turret_occupied = {pos for pos, _ in board.all_cards(side) if pos in turret_range}
-                free_pos = next((p for p in turret_range if p not in turret_occupied), None)
-                if free_pos is None:
-                    return
-                if side == GameSide.BLUE:
-                    board.place_turret_card_on_blue_side(logic_card, free_pos)
-                else:
-                    board.place_turret_card_on_red_side(logic_card, free_pos)
-                self.__board_cards[logic_card.id] = card_id
-                self.__view_to_board[card_id] = (side, free_pos)
-                visual_col = free_pos - 2 if side == GameSide.BLUE else free_pos
-                slot_key = SlotKey(SlotKind.BATTLE, owner, row=0, col=visual_col)
-            else:
-                battle_occupied = {pos for pos, _ in board.all_cards(side) if 0 <= pos < 7}
-                free_col = next((c for c in range(7) if c not in battle_occupied), None)
-                if free_col is None:
-                    return
-                if side == GameSide.BLUE:
-                    board.place_card_on_blue_side(logic_card, free_col)
-                else:
-                    board.place_card_on_red_side(logic_card, free_col)
-                self.__board_cards[logic_card.id] = card_id
-                self.__view_to_board[card_id] = (side, free_col)
-                slot_key = SlotKey(SlotKind.BATTLE, owner, row=1, col=free_col)
-
-            self.__events.emit(
-                Events.CARD_PLACED,
-                card_id=card_id,
-                slot_key=slot_key,
-                texture=texture,
-                card=view_card,
-            )
-            self.__turn.request_action(side)
-        except Exception:
-            pass
 
     def _on_card_placed(self, data: dict) -> None:
         card_id: str | None = data.get("card_id")
@@ -137,15 +111,16 @@ class MatchLogic:
                 else:
                     actual_pos = col
                     board.place_turret_card_on_red_side(logic_card, actual_pos)
+                logical_pos = -(actual_pos + 1)
             else:
                 if side == GameSide.BLUE:
                     board.place_card_on_blue_side(logic_card, col)
                 else:
                     board.place_card_on_red_side(logic_card, col)
-                actual_pos = col
+                logical_pos = col
 
             self.__board_cards[logic_card.id] = card_id
-            self.__view_to_board[card_id] = (side, actual_pos)
+            self.__view_to_board[card_id] = (side, logical_pos)
             self.__turn.request_action(side)
         except ValueError:
             self.__hand[card_id] = logic_card
@@ -184,6 +159,7 @@ class MatchLogic:
             return
         try:
             self.__resolver.attack_card(atk[0], atk[1], tgt[0], tgt[1])
+            self.__turn.request_action(atk[0])
         except Exception:
             pass
 
@@ -199,6 +175,7 @@ class MatchLogic:
             self.__resolver.attack_aegis(
                 atk[0], atk[1], self.__state.aegis(defender_side)
             )
+            self.__turn.request_action(atk[0])
         except Exception:
             pass
 

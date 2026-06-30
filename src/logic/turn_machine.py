@@ -9,18 +9,18 @@ from src.logic.cards.turret_card import TurretCard
 from src.logic.contracts.entity_attributes import EntityAttributes
 
 
-def _initial_structure() -> TurretCard:
+def _initial_structure(id: int) -> TurretCard:
     return TurretCard(
-        id=0,
+        id=id,
         name="Estrutura Inicial",
         description="Estrutura gratuita de abertura de partida.",
         gold_cost=0,
         gold_profit=5,
         effects=deque(),
         attributes=EntityAttributes(
-            health=200,
+            health=50,
             mana=0,
-            attack_damage=20,
+            attack_damage=25,
             magic_damage=0,
             armor=10,
             magic_resistence=5,
@@ -41,11 +41,9 @@ class TurnMachine:
         self._economy = economy
         self._events = events
 
-    # --- Public API ---
-
     def start_match(self) -> None:
         self._distribute_initial_cards()
-        self._start_round(1)
+        self._start_round(2)
         self._start_turn(GameSide.BLUE)
 
     def request_end_turn(self, side: GameSide) -> bool:
@@ -79,8 +77,6 @@ class TurnMachine:
             self.request_end_turn(side)
         return True
 
-    # --- Internal ---
-
     def _start_round(self, round_number: int) -> None:
         blue = self._state.aegis(GameSide.BLUE)
         red = self._state.aegis(GameSide.RED)
@@ -104,6 +100,9 @@ class TurnMachine:
         )
 
     def _start_turn(self, side: GameSide) -> None:
+        for _, card in self._state.board.all_cards(side):
+            if hasattr(card, "reset_turn_state"):
+                card.reset_turn_state()
         self._state.set_phase(TurnPhase.MAIN)
         self._events.emit(Events.TURN_STARTED, side=side)
 
@@ -113,5 +112,5 @@ class TurnMachine:
 
     def _distribute_initial_cards(self) -> None:
         board = self._state.board
-        board.place_turret_card_on_red_side(_initial_structure(), 0)
-        board.place_turret_card_on_blue_side(_initial_structure(), 2)
+        board.place_turret_card_on_red_side(_initial_structure(id=201), 1)
+        board.place_turret_card_on_blue_side(_initial_structure(id=202), 3)

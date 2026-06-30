@@ -23,15 +23,13 @@ class TurretCard(Card):
         )
         self.__attr = attributes
         self.__turn_cooldown = turn_cooldown
-        self.__has_attacked = False
-
-    # --- EntityCard protocol ---
+        self._has_attacked = False
 
     def attack(self, target: "TurretCard") -> None:
         if not self.can_attack:
             return
         target.take_damage(self.__attr.attack_damage)
-        self.__has_attacked = True
+        self._has_attacked = True
 
     def take_damage(self, amount: int) -> int:
         effective = max(0, amount - self.__attr.armor)
@@ -43,19 +41,23 @@ class TurretCard(Card):
         return self.__attr.health
 
     def reset_turn_state(self) -> None:
-        self.__has_attacked = False
+        self._has_attacked = False
 
     @property
     def can_attack(self) -> bool:
-        return not self.__has_attacked and self.is_alive
+        return not self._has_attacked and self.is_alive
 
     @property
     def has_attacked(self) -> bool:
-        return self.__has_attacked
+        return self._has_attacked
 
     @property
     def is_alive(self) -> bool:
         return self.__attr.health > 0
+
+    @property
+    def current_health(self) -> int:
+        return self.__attr.health
 
     @property
     def attack_damage(self) -> int:
