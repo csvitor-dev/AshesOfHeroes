@@ -31,7 +31,7 @@ class GlyphInfo:
 
 class FontAtlas:
 
-    ATLAS_W = 512
+    ATLAS_W = 1024
     ATLAS_H = 512
 
     def __init__(self, font_path: str, size_px: int = 48):
@@ -51,7 +51,8 @@ class FontAtlas:
         cursor_y = PAD
         row_h = 0
 
-        chars = [chr(c) for c in range(32, 127)]
+        _PT_EXTRA = "ÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖØÙÚÛÜÝàáâãäåæçèéêëìíîïðñòóôõöøùúûüý"
+        chars = [chr(c) for c in range(32, 127)] + list(_PT_EXTRA)
 
         for ch in chars:
             face.load_char(ch, freetype.FT_LOAD_RENDER)
